@@ -17,4 +17,6 @@
     <string name="info_dummy">Info</string>
     <string name="undo">Undo</string>
     <string name="redo">Redo</string>
+    <string name="cancel">Cancel</string>
+    <string name="done">Done</string>
 </resources>
