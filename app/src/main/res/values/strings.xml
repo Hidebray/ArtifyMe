@@ -1,3 +1,22 @@
 <resources>
     <string name="app_name">ArtifyMe</string>
+    <string name="photo_name">Photo name</string>
+    <string name="album_name">Album name</string>
+    <string name="photo_count">%1$d photos</string>
+    <string name="add_new_album">Add new album</string>
+    <string name="tap_to_create">Tab to create</string>
+    <string name="full_image">Full Image</string>
+    <string name="photo_info">Photo info</string>
+    <string name="ai">AI</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
+    <string name="adjust">Adjust</string>
+    <string name="filter">Filter</string>
+    <string name="crop">Crop</string>
+    <string name="rotate">Rotate</string>
+    <string name="info_dummy">Info</string>
+    <string name="undo">Undo</string>
+    <string name="redo">Redo</string>
+    <string name="cancel">Cancel</string>
+    <string name="done">Done</string>
 </resources>
