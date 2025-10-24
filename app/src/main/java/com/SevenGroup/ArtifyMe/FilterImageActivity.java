@@ -1,6 +1,7 @@
 package com.SevenGroup.ArtifyMe;
 
 import android.content.Intent;
+import android.net.Uri; // Thêm import
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
@@ -14,7 +15,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearSnapHelper;
 import androidx.recyclerview.widget.SnapHelper;
 
+import com.bumptech.glide.Glide; // Thêm import
+
 public class FilterImageActivity extends AppCompatActivity {
+
+    // ... (Các phần khác của file giữ nguyên) ...
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,17 +39,24 @@ public class FilterImageActivity extends AppCompatActivity {
         SnapHelper snapHelper = new LinearSnapHelper();
         snapHelper.attachToRecyclerView(filterRecyclerView);
 
+        // --- Cập nhật logic load ảnh ---
         Intent intent = getIntent();
-        int imageResId = intent.getIntExtra("imageResId", -1);
-        if (imageResId != -1) {
-            imagePreview.setImageResource(imageResId);
+        String imageUriString = intent.getStringExtra("IMAGE_URI");
+        if (imageUriString != null) {
+            Uri imageUri = Uri.parse(imageUriString);
+            Glide.with(this)
+                    .load(imageUri)
+                    .into(imagePreview);
         }
+        // ------------------------------
 
         // Buttons
         btnCancel.setOnClickListener(v -> finish());
         btnDone.setOnClickListener(v ->
                 Toast.makeText(this, "Filter applied!", Toast.LENGTH_SHORT).show()
         );
+
+        // ... (Phần còn lại của file giữ nguyên) ...
 
         // filters & icons
         String[] filters = {"Warm", "Cool", "Vintage", "Mono", "Bright", "Dark", "Soft", "Sharp"};
@@ -55,9 +67,10 @@ public class FilterImageActivity extends AppCompatActivity {
         };
 
         // RecyclerView
-        filterRecyclerView.setLayoutManager(
-                new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        );
+        // (Bạn đã gọi setLayoutManager 2 lần, tôi bỏ bớt 1 lần)
+        // filterRecyclerView.setLayoutManager(
+        //        new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        // );
 
         FilterAdapter adapter = new FilterAdapter(filters, filterIcons, (filterName, position) -> {
             centerItemInRecyclerView(filterRecyclerView, position);
@@ -83,6 +96,7 @@ public class FilterImageActivity extends AppCompatActivity {
         });
     }
 
+    // ... (Hàm centerItemInRecyclerView giữ nguyên) ...
     private void centerItemInRecyclerView(RecyclerView recyclerView, int position) {
         RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
         if (!(layoutManager instanceof LinearLayoutManager)) return;
@@ -92,17 +106,25 @@ public class FilterImageActivity extends AppCompatActivity {
         View itemView = linearLayoutManager.findViewByPosition(position);
         if (itemView == null) {
             recyclerView.scrollToPosition(position);
-            itemView = linearLayoutManager.findViewByPosition(position);
+            // Cần post-delay một chút để view kịp render sau khi scroll
+            recyclerView.post(() -> {
+                View newItemView = linearLayoutManager.findViewByPosition(position);
+                if (newItemView != null) {
+                    centerView(recyclerView, linearLayoutManager, newItemView);
+                }
+            });
+            return;
         }
 
-        final View targetView = itemView;
-        recyclerView.post(() -> {
-            if (targetView != null) {
-                int itemCenter = targetView.getLeft() + (targetView.getWidth() / 2);
-                int recyclerCenter = recyclerView.getWidth() / 2;
-                int scrollOffset = itemCenter - recyclerCenter;
-                recyclerView.smoothScrollBy(scrollOffset, 0);
-            }
-        });
+        centerView(recyclerView, linearLayoutManager, itemView);
+    }
+
+    private void centerView(RecyclerView recyclerView, LinearLayoutManager linearLayoutManager, View targetView) {
+        if (targetView == null) return;
+
+        int itemCenter = targetView.getLeft() + (targetView.getWidth() / 2);
+        int recyclerCenter = recyclerView.getWidth() / 2;
+        int scrollOffset = itemCenter - recyclerCenter;
+        recyclerView.smoothScrollBy(scrollOffset, 0);
     }
 }
