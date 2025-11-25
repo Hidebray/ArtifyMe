@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#333333">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <ImageButton
+            android:id="@+id/btnCancelAdjust"
+            android:layout_width="48dp" android:layout_height="48dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_alignParentStart="true"
+            app:tint="@android:color/white" />
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Điều chỉnh"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:layout_centerInParent="true" />
+        <ImageButton
+            android:id="@+id/btnApplyAdjust"
+            android:layout_width="48dp" android:layout_height="48dp"
+            android:src="@android:drawable/ic_menu_save"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_alignParentEnd="true"
+            app:tint="@android:color/white" />
+    </RelativeLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rcvAdjustOptions"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:padding="8dp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+    <SeekBar
+        android:id="@+id/seekbarAdjust"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:max="100" android:progress="50" />
+</LinearLayout>
