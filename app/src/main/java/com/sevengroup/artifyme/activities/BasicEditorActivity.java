@@ -20,6 +20,7 @@ import com.sevengroup.artifyme.adapters.EditorToolsAdapter;
 import com.sevengroup.artifyme.fragments.editor.AdjustFragment;
 import com.sevengroup.artifyme.fragments.editor.FilterFragment;
 import com.sevengroup.artifyme.fragments.editor.TextFragment;
+import com.sevengroup.artifyme.managers.AdjustEditorManager;
 import com.sevengroup.artifyme.managers.FilterEditorManager;
 import com.sevengroup.artifyme.managers.TextEditorManager;
 import com.sevengroup.artifyme.utils.AppConstants;
@@ -53,6 +54,7 @@ public class BasicEditorActivity extends BaseActivity implements
     private EditorToolsAdapter toolsAdapter;
     private TextEditorManager mTextManager;
     private FilterEditorManager mFilterManager;
+    private AdjustEditorManager mAdjustManager;
 
     private long currentProjectId;
     private String latestImagePath;
@@ -65,10 +67,10 @@ public class BasicEditorActivity extends BaseActivity implements
                     final Uri resultUri = UCrop.getOutput(result.getData());
                     if (resultUri != null) {
                         this.latestImagePath = resultUri.getPath();
-
-                        viewModel.loadEditableBitmap(latestImagePath);
-
+                        // Reset filters before loading cropped image
                         mFilterManager.resetAll();
+                        // Load the cropped image
+                        viewModel.loadEditableBitmap(latestImagePath);
                     }
                 }
             });
@@ -90,6 +92,7 @@ public class BasicEditorActivity extends BaseActivity implements
 
         mTextManager = new TextEditorManager(this, photoEdtView);
         mFilterManager = new FilterEditorManager(gpuImgView);
+        mAdjustManager = mFilterManager.getAdjustManager();
 
         setupViewModel();
         setupToolsRecyclerView();
@@ -123,8 +126,8 @@ public class BasicEditorActivity extends BaseActivity implements
 
     private void setupViewModel() {
         viewModel = new ViewModelProvider(this).get(BasicEditorViewModel.class);
-        viewModel.getIsLoading().observe(this, isLoading -> 
-            showLoading(prbEditor, isLoading != null && isLoading));
+        viewModel.getIsLoading().observe(this, isLoading ->
+                showLoading(prbEditor, isLoading != null && isLoading));
         viewModel.getErrorMessage().observe(this, error -> {
             showToast(error);
             if (error != null && error.contains("Cannot load")) finish();
@@ -132,6 +135,9 @@ public class BasicEditorActivity extends BaseActivity implements
         viewModel.getLoadedBitmap().observe(this, bitmap -> {
             if (bitmap != null) {
                 this.mainBitmap = bitmap;
+                // Reset adjustments before loading new image to prevent stacking
+                mFilterManager.resetAll();
+                // Now load the image into the filter manager
                 mFilterManager.setImage(mainBitmap);
                 photoEdtView.getSource().setImageBitmap(mainBitmap);
                 photoEdtView.getSource().setAlpha(0f);
@@ -172,10 +178,14 @@ public class BasicEditorActivity extends BaseActivity implements
         photoEdtView.setVisibility(View.VISIBLE);
         switch (toolName) {
             case "Adjust":
-                float b = mFilterManager.getCurrentValue(AdjustFragment.AdjustType.BRIGHTNESS);
-                float c = mFilterManager.getCurrentValue(AdjustFragment.AdjustType.CONTRAST);
-                float s = mFilterManager.getCurrentValue(AdjustFragment.AdjustType.SATURATION);
-                openFragment(AdjustFragment.newInstance(b, c, s));
+                float b = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.BRIGHTNESS);
+                float c = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.CONTRAST);
+                float s = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.SATURATION);
+                float w = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.WARMTH);
+                float v = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.VIGNETTE);
+                float t = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.TINT);
+                float g = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.GRAIN);
+                openFragment(AdjustFragment.newInstance(b, c, s, w, v, t, g));
                 break;
             case "Text":
                 openFragment(TextFragment.newInstance());
@@ -195,23 +205,50 @@ public class BasicEditorActivity extends BaseActivity implements
 
     // --- Fragment Callbacks ---
     @Override
-    public void onAdjustmentChanged(AdjustFragment.AdjustType type, float value) { mFilterManager.adjustImage(type, value); }
-    @Override
-    public void onAdjustApplied() { mFilterManager.saveCurrentState(); closeFragment(); }
-    @Override
-    public void onAdjustCancelled() { mFilterManager.restoreState(); closeFragment(); }
+    public void onAdjustmentChanged(AdjustFragment.AdjustType type, float value) {
+        mAdjustManager.adjust(type, value);
+    }
 
     @Override
-    public void onTextApplied(String text, int colorCode) { mTextManager.addText(text, colorCode); closeFragment(); }
-    @Override
-    public void onTextCancelled() { closeFragment(); }
+    public void onAdjustApplied() {
+        mAdjustManager.saveCurrentState();
+        closeFragment();
+    }
 
     @Override
-    public void onFilterSelected(GPUImageFilter filter, int index) { mFilterManager.setFilterIndex(index); mFilterManager.applyFilter(filter); }
+    public void onAdjustCancelled() {
+        mAdjustManager.restoreState();
+        closeFragment();
+    }
+
     @Override
-    public void onFilterApplied() { mFilterManager.saveCurrentState(); closeFragment(); }
+    public void onTextApplied(String text, int colorCode) {
+        mTextManager.addText(text, colorCode);
+        closeFragment();
+    }
+
     @Override
-    public void onFilterCancelled() { mFilterManager.restoreState(); closeFragment(); }
+    public void onTextCancelled() {
+        closeFragment();
+    }
+
+    @Override
+    public void onFilterSelected(GPUImageFilter filter, int index) {
+        mFilterManager.setFilterIndex(index);
+        mFilterManager.applyFilter(filter);
+    }
+
+    @Override
+    public void onFilterApplied() {
+        mFilterManager.saveCurrentState();
+        closeFragment();
+    }
+
+    @Override
+    public void onFilterCancelled() {
+        mFilterManager.restoreState();
+        closeFragment();
+    }
 
     private void startCrop() {
         showLoading(prbEditor, true);
