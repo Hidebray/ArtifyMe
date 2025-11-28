@@ -12,9 +12,114 @@
         android:textSize="18sp"
         android:textStyle="bold" />
 
-    <TextView
+<!--    Name-->
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Tính năng đang phát triển." />
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="14dp"
+            android:text="Tên"/>
+        <TextView
+            android:id="@+id/imageInfoName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18dp"
+            android:text="screen"/>
+
+    </LinearLayout>
+
+<!--    Time-->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="14dp"
+            android:text="Thời gian"/>
+        <TextView
+            android:id="@+id/imageInfoTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18dp"
+            android:text="screen"/>
+
+    </LinearLayout>
+
+<!--    Size-->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="14dp"
+            android:text="Độ phân giải"/>
+        <TextView
+            android:id="@+id/imageInfoResolution"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18dp"
+            android:text="screen"/>
+
+    </LinearLayout>
+
+<!--    Size-->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="14dp"
+            android:text="Kích cỡ"/>
+        <TextView
+            android:id="@+id/imageInfoSize"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18dp"
+            android:text="screen"/>
+
+    </LinearLayout>
+
+<!--    Path-->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="14dp"
+            android:text="Đường dẫn"/>
+        <TextView
+            android:id="@+id/imageInfoPath"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18dp"
+            android:text="screen"/>
+
+    </LinearLayout>
+
 </LinearLayout>
