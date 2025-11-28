@@ -67,10 +67,8 @@ public class BasicEditorActivity extends BaseActivity implements
                     final Uri resultUri = UCrop.getOutput(result.getData());
                     if (resultUri != null) {
                         this.latestImagePath = resultUri.getPath();
-                        // Reset filters before loading cropped image
-                        mFilterManager.resetAll();
-                        // Load the cropped image
                         viewModel.loadEditableBitmap(latestImagePath);
+                        mFilterManager.resetAll();
                     }
                 }
             });
@@ -178,14 +176,21 @@ public class BasicEditorActivity extends BaseActivity implements
         photoEdtView.setVisibility(View.VISIBLE);
         switch (toolName) {
             case "Adjust":
+                android.util.Log.d("DEBUG", "Opening Adjust panel");
                 float b = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.BRIGHTNESS);
                 float c = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.CONTRAST);
+                android.util.Log.d("DEBUG", "Current contrast value from manager: " + c);
                 float s = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.SATURATION);
                 float w = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.WARMTH);
                 float v = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.VIGNETTE);
                 float t = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.TINT);
                 float g = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.GRAIN);
-                openFragment(AdjustFragment.newInstance(b, c, s, w, v, t, g));
+                float sh = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.SHARPNESS);
+                float e = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.EXPOSURE);
+                float h = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.HIGHLIGHTS);
+                float sd = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.SHADOWS);
+                float gm = mAdjustManager.getCurrentValue(AdjustFragment.AdjustType.GAMMA);
+                openFragment(AdjustFragment.newInstance(b, c, s, w, v, t, g, sh, e, h, sd, gm));
                 break;
             case "Text":
                 openFragment(TextFragment.newInstance());

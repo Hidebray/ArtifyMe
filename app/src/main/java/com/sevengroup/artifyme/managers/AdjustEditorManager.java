@@ -5,10 +5,14 @@ import android.opengl.GLES20;
 import jp.co.cyberagent.android.gpuimage.GPUImageView;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageBrightnessFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageContrastFilter;
+import jp.co.cyberagent.android.gpuimage.filter.GPUImageExposureFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilterGroup;
+import jp.co.cyberagent.android.gpuimage.filter.GPUImageGammaFilter;
+import jp.co.cyberagent.android.gpuimage.filter.GPUImageHighlightShadowFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageRGBFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageSaturationFilter;
+import jp.co.cyberagent.android.gpuimage.filter.GPUImageSharpenFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageVignetteFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageWhiteBalanceFilter;
 import com.sevengroup.artifyme.fragments.editor.AdjustFragment;
@@ -25,6 +29,10 @@ public class AdjustEditorManager {
     private final GPUImageVignetteFilter mVignetteFilter;
     private final GPUImageRGBFilter mTintFilter;
     private final GrainFilter mGrainFilter;
+    private final GPUImageSharpenFilter mSharpenFilter;
+    private final GPUImageExposureFilter mExposureFilter;
+    private final GPUImageHighlightShadowFilter mHighlightShadowFilter;
+    private final GPUImageGammaFilter mGammaFilter;
 
     // Current values
     private float mBrightness = 0.0f;
@@ -34,6 +42,11 @@ public class AdjustEditorManager {
     private float mVignette = -1.0f;
     private float mTint = 0.0f;
     private float mGrain = -1.0f;
+    private float mSharpness = 0.0f;
+    private float mExposure = 0.0f;
+    private float mHighlights = 0.0f;
+    private float mShadows = 0.0f;
+    private float mGamma = 1.0f;
 
     // Saved state for cancel functionality
     private float mSavedBrightness = 0.0f;
@@ -43,6 +56,11 @@ public class AdjustEditorManager {
     private float mSavedVignette = -1.0f;
     private float mSavedTint = 0.0f;
     private float mSavedGrain = -1.0f;
+    private float mSavedSharpness = 0.0f;
+    private float mSavedExposure = 0.0f;
+    private float mSavedHighlights = 0.0f;
+    private float mSavedShadows = 0.0f;
+    private float mSavedGamma = 1.0f;
 
     public AdjustEditorManager(GPUImageView gpuImageView) {
         this.mGpuImageView = gpuImageView;
@@ -58,16 +76,24 @@ public class AdjustEditorManager {
         mVignetteFilter.setVignetteEnd(1.3f);
 
         mTintFilter = new GPUImageRGBFilter(1.0f, 1.0f, 1.0f);
-
         mGrainFilter = new GrainFilter();
         mGrainFilter.setGrainIntensity(0.0f);
+
+        mSharpenFilter = new GPUImageSharpenFilter(0.0f);
+        mExposureFilter = new GPUImageExposureFilter(0.0f);
+        mHighlightShadowFilter = new GPUImageHighlightShadowFilter(0.0f, 0.0f);
+        mGammaFilter = new GPUImageGammaFilter(1.0f);
 
         mAdjustGroup = new GPUImageFilterGroup();
         mAdjustGroup.addFilter(mBrightnessFilter);
         mAdjustGroup.addFilter(mContrastFilter);
         mAdjustGroup.addFilter(mSaturationFilter);
+        mAdjustGroup.addFilter(mExposureFilter);
+        mAdjustGroup.addFilter(mGammaFilter);
+        mAdjustGroup.addFilter(mHighlightShadowFilter);
         mAdjustGroup.addFilter(mWarmthFilter);
         mAdjustGroup.addFilter(mTintFilter);
+        mAdjustGroup.addFilter(mSharpenFilter);
         mAdjustGroup.addFilter(mVignetteFilter);
         mAdjustGroup.addFilter(mGrainFilter);
 
@@ -114,7 +140,6 @@ public class AdjustEditorManager {
 
             case TINT:
                 mTint = value;
-                // Map -1.0 (green) to 0.0 (neutral) to 1.0 (magenta/purple)
                 float tintAmount = mTint * 0.3f;
                 mTintFilter.setRed(1.0f + tintAmount);
                 mTintFilter.setGreen(1.0f - tintAmount);
@@ -123,9 +148,40 @@ public class AdjustEditorManager {
 
             case GRAIN:
                 mGrain = value;
-                // Map -1.0 to 1.0 → grain intensity (0.0 to 0.3)
                 float grainIntensity = Math.max(0f, (mGrain + 1.0f) / 2.0f) * 0.3f;
                 mGrainFilter.setGrainIntensity(grainIntensity);
+                break;
+
+            case SHARPNESS:
+                mSharpness = value;
+                // Map -1.0 to 1.0 → sharpness -4.0 to 4.0
+                float sharpness = mSharpness * 4.0f;
+                mSharpenFilter.setSharpness(sharpness);
+                break;
+
+            case EXPOSURE:
+                mExposure = value;
+                // Map -1.0 to 1.0 → exposure -2.0 to 2.0
+                float exposure = mExposure * 2.0f;
+                mExposureFilter.setExposure(exposure);
+                break;
+
+            case HIGHLIGHTS:
+                mHighlights = value;
+                // Keep shadows, only adjust highlights
+                mHighlightShadowFilter.setHighlights(mHighlights);
+                break;
+
+            case SHADOWS:
+                mShadows = value;
+                // Keep highlights, only adjust shadows
+                mHighlightShadowFilter.setShadows(mShadows);
+                break;
+
+            case GAMMA:
+                mGamma = 1.0f + value;
+                // Map -1.0 to 1.0 → gamma 0.0 to 2.0
+                mGammaFilter.setGamma(Math.max(0.1f, mGamma));
                 break;
         }
 
@@ -148,6 +204,16 @@ public class AdjustEditorManager {
                 return mTint;
             case GRAIN:
                 return mGrain;
+            case SHARPNESS:
+                return mSharpness;
+            case EXPOSURE:
+                return mExposure;
+            case HIGHLIGHTS:
+                return mHighlights;
+            case SHADOWS:
+                return mShadows;
+            case GAMMA:
+                return mGamma - 1.0f;
             default:
                 return 0.0f;
         }
@@ -161,6 +227,11 @@ public class AdjustEditorManager {
         mSavedVignette = mVignette;
         mSavedTint = mTint;
         mSavedGrain = mGrain;
+        mSavedSharpness = mSharpness;
+        mSavedExposure = mExposure;
+        mSavedHighlights = mHighlights;
+        mSavedShadows = mShadows;
+        mSavedGamma = mGamma;
     }
 
     public void restoreState() {
@@ -171,6 +242,11 @@ public class AdjustEditorManager {
         mVignette = mSavedVignette;
         mTint = mSavedTint;
         mGrain = mSavedGrain;
+        mSharpness = mSavedSharpness;
+        mExposure = mSavedExposure;
+        mHighlights = mSavedHighlights;
+        mShadows = mSavedShadows;
+        mGamma = mSavedGamma;
 
         mBrightnessFilter.setBrightness(mBrightness);
         mContrastFilter.setContrast(mContrast);
@@ -194,6 +270,17 @@ public class AdjustEditorManager {
         float grainIntensity = Math.max(0f, (mGrain + 1.0f) / 2.0f) * 0.3f;
         mGrainFilter.setGrainIntensity(grainIntensity);
 
+        float sharpness = mSharpness * 4.0f;
+        mSharpenFilter.setSharpness(sharpness);
+
+        float exposure = mExposure * 2.0f;
+        mExposureFilter.setExposure(exposure);
+
+        mHighlightShadowFilter.setHighlights(mHighlights);
+        mHighlightShadowFilter.setShadows(mShadows);
+
+        mGammaFilter.setGamma(Math.max(0.1f, mGamma));
+
         mGpuImageView.requestRender();
     }
 
@@ -205,6 +292,11 @@ public class AdjustEditorManager {
         mVignette = -1.0f;
         mTint = 0.0f;
         mGrain = -1.0f;
+        mSharpness = 0.0f;
+        mExposure = 0.0f;
+        mHighlights = 0.0f;
+        mShadows = 0.0f;
+        mGamma = 1.0f;
 
         mBrightnessFilter.setBrightness(0.0f);
         mContrastFilter.setContrast(1.0f);
@@ -217,6 +309,11 @@ public class AdjustEditorManager {
         mTintFilter.setGreen(1.0f);
         mTintFilter.setBlue(1.0f);
         mGrainFilter.setGrainIntensity(0.0f);
+        mSharpenFilter.setSharpness(0.0f);
+        mExposureFilter.setExposure(0.0f);
+        mHighlightShadowFilter.setHighlights(0.0f);
+        mHighlightShadowFilter.setShadows(0.0f);
+        mGammaFilter.setGamma(1.0f);
 
         saveCurrentState();
         mGpuImageView.requestRender();

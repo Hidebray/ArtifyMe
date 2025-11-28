@@ -19,7 +19,7 @@ import java.util.List;
 public class AdjustFragment extends Fragment {
     private AdjustListener listener;
     private AdjustType currentType = AdjustType.BRIGHTNESS;
-    private float mBrightness, mContrast, mSaturation, mWarmth, mVignette, mTint, mGrain;
+    private float mBrightness, mContrast, mSaturation, mWarmth, mVignette, mTint, mGrain, mSharpness, mExposure, mHighlights, mShadows, mGamma;
 
     public enum AdjustType {
         BRIGHTNESS,
@@ -28,7 +28,12 @@ public class AdjustFragment extends Fragment {
         WARMTH,
         VIGNETTE,
         TINT,
-        GRAIN
+        GRAIN,
+        SHARPNESS,
+        EXPOSURE,
+        HIGHLIGHTS,
+        SHADOWS,
+        GAMMA
     }
 
     public interface AdjustListener {
@@ -37,7 +42,7 @@ public class AdjustFragment extends Fragment {
         void onAdjustCancelled();
     }
 
-    public static AdjustFragment newInstance(float b, float c, float s, float w, float v, float t, float g) {
+    public static AdjustFragment newInstance(float b, float c, float s, float w, float v, float t, float g, float sh, float e, float h, float sd, float gm) {
         AdjustFragment f = new AdjustFragment();
         Bundle args = new Bundle();
         args.putFloat("B", b);
@@ -47,6 +52,11 @@ public class AdjustFragment extends Fragment {
         args.putFloat("V", v);
         args.putFloat("T", t);
         args.putFloat("G", g);
+        args.putFloat("SH", sh);
+        args.putFloat("E", e);
+        args.putFloat("H", h);
+        args.putFloat("SD", sd);
+        args.putFloat("GM", gm);
         f.setArguments(args);
         return f;
     }
@@ -85,13 +95,18 @@ public class AdjustFragment extends Fragment {
         RecyclerView rcv = view.findViewById(R.id.rcvAdjustOptions);
 
         List<AdjustOptionModel> options = new ArrayList<>();
-        options.add(new AdjustOptionModel("Độ sáng", AdjustType.BRIGHTNESS, android.R.drawable.ic_menu_rotate));
-        options.add(new AdjustOptionModel("Tương phản", AdjustType.CONTRAST, android.R.drawable.ic_menu_crop));
+        options.add(new AdjustOptionModel("Độ sáng", AdjustType.BRIGHTNESS, R.drawable.ic_brightness));
+        options.add(new AdjustOptionModel("Tương phản", AdjustType.CONTRAST, R.drawable.ic_contrast));
         options.add(new AdjustOptionModel("Bão hòa", AdjustType.SATURATION, android.R.drawable.ic_menu_view));
-        options.add(new AdjustOptionModel("Ấm/Lạnh", AdjustType.WARMTH, android.R.drawable.ic_menu_compass));
-        options.add(new AdjustOptionModel("Viền tối", AdjustType.VIGNETTE, android.R.drawable.ic_menu_gallery));
-        options.add(new AdjustOptionModel("Màu xanh/tím", AdjustType.TINT, android.R.drawable.ic_menu_manage));
-        options.add(new AdjustOptionModel("Hạt phim", AdjustType.GRAIN, android.R.drawable.ic_menu_zoom));
+        options.add(new AdjustOptionModel("Ấm/Lạnh", AdjustType.WARMTH, R.drawable.ic_warmth));
+        options.add(new AdjustOptionModel("Viền tối", AdjustType.VIGNETTE, R.drawable.ic_vignette));
+        options.add(new AdjustOptionModel("Tint", AdjustType.TINT, android.R.drawable.ic_menu_manage));
+        options.add(new AdjustOptionModel("Hạt phim", AdjustType.GRAIN, R.drawable.ic_grain));
+        options.add(new AdjustOptionModel("Độ sắc nét", AdjustType.SHARPNESS, R.drawable.ic_sharpness));
+        options.add(new AdjustOptionModel("Phơi sáng", AdjustType.EXPOSURE, R.drawable.ic_exposure));
+        options.add(new AdjustOptionModel("Vùng sáng", AdjustType.HIGHLIGHTS, R.drawable.ic_highlight));
+        options.add(new AdjustOptionModel("Vùng tối", AdjustType.SHADOWS, R.drawable.ic_shadow));
+        options.add(new AdjustOptionModel("Gamma", AdjustType.GAMMA, android.R.drawable.ic_menu_preferences));
 
         AdjustOptionsAdapter adapter = new AdjustOptionsAdapter(getContext(), options, type -> {
             currentType = type;
