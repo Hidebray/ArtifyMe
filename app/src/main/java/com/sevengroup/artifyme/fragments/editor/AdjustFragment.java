@@ -72,6 +72,11 @@ public class AdjustFragment extends Fragment {
             mVignette = getArguments().getFloat("V");
             mTint = getArguments().getFloat("T");
             mGrain = getArguments().getFloat("G");
+            mSharpness = getArguments().getFloat("SH");
+            mExposure = getArguments().getFloat("E");
+            mHighlights = getArguments().getFloat("H");
+            mShadows = getArguments().getFloat("SD");
+            mGamma = getArguments().getFloat("GM");
         }
     }
 
@@ -119,6 +124,11 @@ public class AdjustFragment extends Fragment {
                 case VIGNETTE: val = mVignette; break;
                 case TINT: val = mTint; break;
                 case GRAIN: val = mGrain; break;
+                case SHARPNESS: val = mSharpness; break;
+                case EXPOSURE: val = mExposure; break;
+                case HIGHLIGHTS: val = mHighlights; break;
+                case SHADOWS: val = mShadows; break;
+                case GAMMA: val = mGamma; break;
             }
             int progress = (int)((val * 50) + 50);
             seekBar.setProgress(progress);
@@ -140,6 +150,11 @@ public class AdjustFragment extends Fragment {
                         case VIGNETTE: mVignette = val; break;
                         case TINT: mTint = val; break;
                         case GRAIN: mGrain = val; break;
+                        case SHARPNESS: mSharpness = val; break;
+                        case EXPOSURE: mExposure = val; break;
+                        case HIGHLIGHTS: mHighlights = val; break;
+                        case SHADOWS: mShadows = val; break;
+                        case GAMMA: mGamma = val; break;
                     }
                     listener.onAdjustmentChanged(currentType, val);
                 }
