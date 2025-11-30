@@ -3,39 +3,54 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="#333333">
+    android:background="@color/bg_toolbar">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
+
         <ImageButton
             android:id="@+id/btnCancelFilter"
-            android:layout_width="48dp" android:layout_height="48dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:layout_alignParentStart="true"
-            app:tint="@android:color/white" />
+            app:tint="@color/text_primary" />
+
         <TextView
-            android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Bộ lọc màu"
-            android:textColor="@android:color/white"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/filter_title"
+            android:textColor="@color/text_primary"
             android:textSize="16sp"
+            android:textStyle="bold"
             android:layout_centerInParent="true" />
-        <ImageButton
+
+        <TextView
             android:id="@+id/btnApplyFilter"
-            android:layout_width="48dp" android:layout_height="48dp"
-            android:src="@android:drawable/ic_menu_save"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_done"
+            android:textColor="@color/brand_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:layout_alignParentEnd="true"
-            app:tint="@android:color/white" />
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_centerInParent="true"
+            android:layout_alignParentEnd="true"/>
     </RelativeLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rcvFilters"
-        android:layout_width="match_parent" android:layout_height="140dp"
+        android:layout_width="match_parent"
+        android:layout_height="140dp"
         android:layout_marginTop="16dp"
         android:orientation="horizontal"
+        tools:listitem="@layout/item_editor_filter"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 </LinearLayout>

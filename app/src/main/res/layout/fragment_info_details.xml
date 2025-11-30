@@ -5,16 +5,119 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <TextView
+    <!--    Name-->
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Thông tin Chi tiết"
-        android:textSize="18sp"
-        android:textStyle="bold" />
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:text="@string/info_name"/>
+
+        <TextView
+            android:id="@+id/txtInfoName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:text="@string/default_text"/>
+
+    </LinearLayout>
+
+    <!--    Time-->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:text="@string/info_time"/>
+
+        <TextView
+            android:id="@+id/txtInfoTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:text="@string/default_text"/>
+
+    </LinearLayout>
+
+    <!--    Size-->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:text="@string/info_resolution"/>
+
+        <TextView
+            android:id="@+id/txtInfoResolution"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:text="@string/default_text"/>
+
+    </LinearLayout>
+
+    <!--    Size-->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:text="@string/info_size"/>
+
+        <TextView
+            android:id="@+id/txtInfoSize"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:text="@string/default_text"/>
+
+    </LinearLayout>
+
+    <!--    Path-->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Tính năng đang phát triển." />
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:text="@string/info_path"/>
+
+    <TextView
+        android:id="@+id/txtInfoPath"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:text="@string/default_text"/>
+
+    </LinearLayout>
+
 </LinearLayout>

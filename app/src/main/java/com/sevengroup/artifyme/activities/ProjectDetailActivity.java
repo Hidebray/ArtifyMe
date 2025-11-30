@@ -1,16 +1,21 @@
 package com.sevengroup.artifyme.activities;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -21,18 +26,25 @@ import com.sevengroup.artifyme.viewmodels.ProjectDetailViewModel;
 import java.io.File;
 
 public class ProjectDetailActivity extends BaseActivity {
-    private ImageView imgProjectMainImage;
-    private Button btnEditBasic, btnExport, btnDeleteProject;
-    private ProgressBar prbExport;
-
-    // Header
-    private TextView txtHeaderTitle;
-    private View btnHeaderBack;
-    private ImageView btnHeaderInfo;
+    private ImageView imgProject;
+    private ImageButton btnBack, btnInfo;
+    private TextView txtProjectName;
+    private ProgressBar prbShare;
+    private LinearLayout btnShare, btnEdit, btnDelete;
 
     private ProjectDetailViewModel viewModel;
     private long currentProjectId;
+    private String currentProjectName;
     private String latestImagePath;
+
+    private final ActivityResultLauncher<String> requestWritePermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    viewModel.exportImageToGallery(latestImagePath);
+                } else {
+                    showToast("Cần quyền truy cập bộ nhớ để lưu ảnh (Android 9 trở xuống).");
+                }
+            });
 
     private final ActivityResultLauncher<Intent> editorResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -51,12 +63,6 @@ public class ProjectDetailActivity extends BaseActivity {
 
         initViews();
 
-        setupCustomHeader(txtHeaderTitle, "Chi tiết", btnHeaderBack);
-        if (btnHeaderInfo != null) {
-            btnHeaderInfo.setVisibility(View.VISIBLE);
-            btnHeaderInfo.setOnClickListener(v -> showHistoryBottomSheet());
-        }
-
         viewModel = new ViewModelProvider(this).get(ProjectDetailViewModel.class);
         observeViewModel();
         loadLatestImage();
@@ -68,10 +74,10 @@ public class ProjectDetailActivity extends BaseActivity {
             if (data != null) {
                 currentProjectId = data.getLong(AppConstants.KEY_PROJECT_ID, -1L);
                 latestImagePath = data.getString(AppConstants.KEY_IMAGE_PATH);
-            }
+                currentProjectName = data.getString(AppConstants.KEY_PROJECT_NAME, getString(R.string.default_project_name));            }
         }
         if (currentProjectId == -1 || latestImagePath == null) {
-            showToast("Lỗi: Không thể tải dự án");
+            showToast(getString(R.string.msg_error_load_project));
             finish();
             return false;
         }
@@ -79,19 +85,35 @@ public class ProjectDetailActivity extends BaseActivity {
     }
 
     private void initViews() {
-        imgProjectMainImage = findViewById(R.id.imgProjectMainImage);
-        btnEditBasic = findViewById(R.id.btnEditBasic);
-        btnExport = findViewById(R.id.btnExport);
-        btnDeleteProject = findViewById(R.id.btnDeleteProject);
-        prbExport = findViewById(R.id.prbExport);
+        imgProject = findViewById(R.id.imgProject);
+        btnBack = findViewById(R.id.btnBack);
+        btnInfo = findViewById(R.id.btnInfo);
+        txtProjectName = findViewById(R.id.txtProjectName);
+        btnShare = findViewById(R.id.btnShare);
+        btnEdit = findViewById(R.id.btnEdit);
+        btnDelete = findViewById(R.id.btnDelete);
+        prbShare = findViewById(R.id.prbShare);
 
-        txtHeaderTitle = findViewById(R.id.txtHeaderTitle);
-        btnHeaderBack = findViewById(R.id.btnHeaderBack);
-        btnHeaderInfo = findViewById(R.id.btnHeaderInfo);
+        if (currentProjectName != null) {
+            txtProjectName.setText(currentProjectName);
+        }
 
-        btnEditBasic.setOnClickListener(v -> startBasicEditor());
-        btnExport.setOnClickListener(v -> viewModel.exportImageToGallery(latestImagePath));
-        btnDeleteProject.setOnClickListener(v -> confirmDelete());
+        btnBack.setOnClickListener(v -> finish());
+        btnInfo.setOnClickListener(v -> showHistoryBottomSheet());
+        btnEdit.setOnClickListener(v -> startBasicEditor());
+        btnShare.setOnClickListener(v -> {
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    viewModel.exportImageToGallery(latestImagePath);
+                } else {
+                    requestWritePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                }
+            } else {
+                viewModel.exportImageToGallery(latestImagePath);
+            }
+        });
+        btnDelete.setOnClickListener(v -> confirmDelete());
     }
 
     private void observeViewModel() {
@@ -102,7 +124,7 @@ public class ProjectDetailActivity extends BaseActivity {
             }
         });
         viewModel.getIsExporting().observe(this, isExporting ->
-                showLoading(prbExport, isExporting != null && isExporting));
+                showLoading(prbShare, isExporting != null && isExporting));
         viewModel.getExportStatusMessage().observe(this, this::showToast);
         viewModel.getProjectDeleted().observe(this, isDeleted -> {
             if (isDeleted != null && isDeleted) {
@@ -118,7 +140,8 @@ public class ProjectDetailActivity extends BaseActivity {
             Glide.with(this).load(imageFile)
                     .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .skipMemoryCache(true)
-                    .fitCenter().into(imgProjectMainImage);
+                    .fitCenter()
+                    .into(imgProject);
         }
     }
 
@@ -138,10 +161,10 @@ public class ProjectDetailActivity extends BaseActivity {
 
     private void confirmDelete() {
         new AlertDialog.Builder(this)
-                .setTitle("Xóa Dự Án")
-                .setMessage("Bạn có chắc chắn muốn xóa vĩnh viễn dự án này?")
-                .setPositiveButton("Xóa", (d, w) -> viewModel.handleDeleteProject(currentProjectId))
-                .setNegativeButton("Hủy", null)
+                .setTitle(R.string.dialog_delete_title)
+                .setMessage(R.string.dialog_delete_msg)
+                .setPositiveButton(R.string.btn_delete, (d, w) -> viewModel.handleDeleteProject(currentProjectId))
+                .setNegativeButton(R.string.btn_cancel, null)
                 .show();
     }
 }

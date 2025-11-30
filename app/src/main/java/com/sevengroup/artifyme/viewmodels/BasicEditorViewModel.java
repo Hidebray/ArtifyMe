@@ -7,13 +7,13 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import com.sevengroup.artifyme.repositories.ProjectRepository;
+import com.sevengroup.artifyme.utils.AppExecutors;
 import com.sevengroup.artifyme.utils.BitmapUtils;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class BasicEditorViewModel extends AndroidViewModel {
     private final ProjectRepository repository;
-    private final ExecutorService executor;
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
     private final MutableLiveData<Bitmap> loadedBitmap = new MutableLiveData<>();
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
@@ -23,7 +23,6 @@ public class BasicEditorViewModel extends AndroidViewModel {
     public BasicEditorViewModel(@NonNull Application application) {
         super(application);
         repository = ProjectRepository.getInstance(application);
-        executor = Executors.newSingleThreadExecutor();
     }
 
     public LiveData<Boolean> getIsLoading() { return isLoading; }
@@ -34,7 +33,7 @@ public class BasicEditorViewModel extends AndroidViewModel {
 
     public void loadEditableBitmap(String imagePath) {
         isLoading.postValue(true);
-        executor.execute(() -> {
+        AppExecutors.getInstance().diskIO().execute(() -> {
             Bitmap bitmap = BitmapUtils.loadSafeBitmap(imagePath);
             if (bitmap != null) loadedBitmap.postValue(bitmap);
             else errorMessage.postValue("Lỗi: Không thể tải ảnh.");
@@ -44,7 +43,7 @@ public class BasicEditorViewModel extends AndroidViewModel {
 
     public void saveEditedImage(long projectId, Bitmap bitmapToSave) {
         isSaving.postValue(true);
-        executor.execute(() -> {
+        AppExecutors.getInstance().diskIO().execute(() -> {
             String newPath = BitmapUtils.saveBitmapToAppStorage(getApplication(), bitmapToSave);
             if (newPath == null) {
                 errorMessage.postValue("Lỗi: Không thể lưu file.");
@@ -61,6 +60,5 @@ public class BasicEditorViewModel extends AndroidViewModel {
     @Override
     protected void onCleared() {
         super.onCleared();
-        executor.shutdown();
     }
 }

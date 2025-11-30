@@ -13,14 +13,17 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.sevengroup.artifyme.R;
 import com.sevengroup.artifyme.adapters.FilterAdapter;
-import java.util.ArrayList;
+import com.sevengroup.artifyme.utils.FilterGenerator;
+
 import java.util.List;
-import jp.co.cyberagent.android.gpuimage.filter.*;
+import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 
 public class FilterFragment extends Fragment implements FilterAdapter.OnFilterClickListener {
     private FilterListener listener;
     private Bitmap previewBitmap;
+    private FilterAdapter adapter;
     private int currentFilterIndex = 0;
+
     public interface FilterListener {
         void onFilterSelected(GPUImageFilter filter, int index);
         void onFilterApplied();
@@ -34,8 +37,12 @@ public class FilterFragment extends Fragment implements FilterAdapter.OnFilterCl
         fragment.setArguments(args);
         return fragment;
     }
+
     public void setPreviewBitmap(Bitmap bitmap) {
         this.previewBitmap = bitmap;
+        if (adapter != null) {
+            adapter.setThumbnailBitmap(bitmap);
+        }
     }
 
     @Override
@@ -70,25 +77,27 @@ public class FilterFragment extends Fragment implements FilterAdapter.OnFilterCl
         view.findViewById(R.id.btnCancelFilter).setOnClickListener(v -> listener.onFilterCancelled());
 
         RecyclerView rcvFilters = view.findViewById(R.id.rcvFilters);
+        List<FilterAdapter.FilterModel> filters = FilterGenerator.getFilters();
 
-        List<FilterAdapter.FilterModel> filters = new ArrayList<>();
-        filters.add(new FilterAdapter.FilterModel("Normal", new GPUImageFilter()));
-        filters.add(new FilterAdapter.FilterModel("Sepia", new GPUImageSepiaToneFilter()));
-        filters.add(new FilterAdapter.FilterModel("Grayscale", new GPUImageGrayscaleFilter()));
-        filters.add(new FilterAdapter.FilterModel("Invert", new GPUImageColorInvertFilter()));
-        filters.add(new FilterAdapter.FilterModel("Contrast", new GPUImageContrastFilter(2.0f)));
-        filters.add(new FilterAdapter.FilterModel("Sketch", new GPUImageSketchFilter()));
-        filters.add(new FilterAdapter.FilterModel("Vignette", new GPUImageVignetteFilter()));
-
-        FilterAdapter adapter = new FilterAdapter(getContext(), filters, previewBitmap, currentFilterIndex, this);
+        adapter = new FilterAdapter(getContext(), filters, previewBitmap, currentFilterIndex, this);
         rcvFilters.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         rcvFilters.setAdapter(adapter);
-        rcvFilters.scrollToPosition(currentFilterIndex);
+
+        if (currentFilterIndex >= 0 && currentFilterIndex < filters.size()) {
+            rcvFilters.scrollToPosition(currentFilterIndex);
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (adapter != null) {
+            adapter.release();
+        }
+        super.onDestroyView();
     }
 
     @Override
     public void onFilterSelected(GPUImageFilter filter, int index) {
         if (listener != null) listener.onFilterSelected(filter, index);
     }
-
 }

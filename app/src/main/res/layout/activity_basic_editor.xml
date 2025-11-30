@@ -1,36 +1,112 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black"
-    tools:context=".activities.BasicEditorActivity">
+    android:background="@color/bg_app">
 
-    <include
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layoutHeader"
-        layout="@layout/layout_header" />
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/bg_toolbar"
+        android:elevation="4dp"
+        android:outlineProvider="background"
+        android:paddingHorizontal="8dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnClose"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/close_24px"
+            app:tint="@color/text_primary"
+            android:scaleType="centerInside"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+        <LinearLayout
+            android:id="@+id/layoutUndoRedo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_pill_white_shadow"
+            android:elevation="6dp"
+            android:padding="8dp"
+            android:gravity="center_vertical"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <ImageButton
+                android:id="@+id/btnUndo"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/undo_24px"
+                app:tint="@color/text_primary"
+                android:background="?attr/selectableItemBackgroundBorderless"/>
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="16dp"
+                android:background="@color/icon_empty"
+                android:layout_marginHorizontal="8dp"/>
+
+            <ImageButton
+                android:id="@+id/btnRedo"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/redo_24px"
+                app:tint="@color/text_primary"
+                android:background="?attr/selectableItemBackgroundBorderless"/>
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/btnSave"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="@string/btn_save"
+            android:textColor="@color/brand_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingHorizontal="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <FrameLayout
-        android:id="@+id/fl_editor_container"
+        android:id="@+id/frameEditorContainer"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/rcvMainTools"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:background="@color/bg_app"
+        app:layout_constraintTop_toBottomOf="@id/layoutHeader"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutHeader">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <jp.co.cyberagent.android.gpuimage.GPUImageView
             android:id="@+id/gpuImgView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:visibility="visible" />
+            app:gpuimage_show_loading="false"
+            app:gpuimage_surface_type="texture_view"/>
 
         <ja.burhanrashid52.photoeditor.PhotoEditorView
             android:id="@+id/photoEdtView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="invisible" />
+            android:layout_height="match_parent" />
     </FrameLayout>
 
     <ProgressBar
@@ -38,25 +114,58 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@id/fl_editor_container"
-        app:layout_constraintEnd_toEndOf="@id/fl_editor_container"
-        app:layout_constraintStart_toStartOf="@id/fl_editor_container"
-        app:layout_constraintTop_toTopOf="@id/fl_editor_container" />
+        android:indeterminateTint="@color/brand_primary"
+        android:elevation="10dp"
+        app:layout_constraintBottom_toBottomOf="@id/frameEditorContainer"
+        app:layout_constraintEnd_toEndOf="@id/frameEditorContainer"
+        app:layout_constraintStart_toStartOf="@id/frameEditorContainer"
+        app:layout_constraintTop_toTopOf="@id/frameEditorContainer" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rcvMainTools"
-        android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:background="#222222"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
-    <FrameLayout
-        android:id="@+id/frlPanelContainer"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutFooter"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#333333"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/rcvMainTools" />
+        android:paddingBottom="24dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardTools"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            app:cardBackgroundColor="@color/bg_toolbar"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="8dp"
+            app:strokeColor="#1A000000"
+            app:strokeWidth="1dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <FrameLayout
+                android:id="@+id/frameSubTool"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="72dp"
+                android:visibility="invisible"
+                tools:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rcvTools"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="72dp"
+                android:orientation="horizontal"
+                android:clipToPadding="false"
+                android:paddingHorizontal="8dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_editor_tool"
+                tools:itemCount="5" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

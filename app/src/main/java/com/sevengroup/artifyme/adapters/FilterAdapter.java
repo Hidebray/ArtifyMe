@@ -26,11 +26,13 @@ import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.FilterViewHolder> {
     private final List<FilterModel> filterList;
     private final OnFilterClickListener listener;
-    private final Context context;
-    private final Bitmap thumbnailBitmap;
+    private  Bitmap thumbnailBitmap;
     private final Map<Integer, Bitmap> previewCache = new HashMap<>();
     private final ExecutorService renderExecutor = Executors.newFixedThreadPool(1);
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private int selectedPosition;
+
+    private final GPUImage gpuImageHelper;
 
     public interface OnFilterClickListener {
         void onFilterSelected(GPUImageFilter filter, int position);
@@ -46,11 +48,24 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.FilterView
     }
 
     public FilterAdapter(Context context, List<FilterModel> filterList, Bitmap thumbnailBitmap, int initialPosition, OnFilterClickListener listener) {
-        this.context = context;
         this.filterList = filterList;
         this.thumbnailBitmap = thumbnailBitmap;
         this.listener = listener;
         this.selectedPosition = initialPosition;
+        this.gpuImageHelper = new GPUImage(context);
+    }
+
+    public void release() {
+        if (!renderExecutor.isShutdown()) {
+            renderExecutor.shutdownNow();
+        }
+        previewCache.clear();
+    }
+
+    public void setThumbnailBitmap(Bitmap bitmap) {
+        this.thumbnailBitmap = bitmap;
+        this.previewCache.clear();
+        notifyDataSetChanged();
     }
 
     @NonNull @Override
@@ -64,25 +79,33 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.FilterView
         FilterModel item = filterList.get(position);
         holder.txtFilterName.setText(item.name);
 
+        boolean isSelected = (position == selectedPosition);
+        holder.itemView.setSelected(isSelected);
+
         if (previewCache.containsKey(position)) {
             holder.imgFilterPreview.setImageBitmap(previewCache.get(position));
         } else {
+            holder.imgFilterPreview.setImageBitmap(thumbnailBitmap); // Ảnh tạm
 
-            if (thumbnailBitmap != null) {
-                holder.imgFilterPreview.setImageBitmap(thumbnailBitmap);
-
+            if (thumbnailBitmap != null && !renderExecutor.isShutdown()) {
+                final int pos = position; // Capture position
                 renderExecutor.execute(() -> {
                     try {
-                        GPUImage gpuImage = new GPUImage(context);
-                        gpuImage.setImage(thumbnailBitmap);
-                        gpuImage.setFilter(item.filter);
-                        Bitmap processedBitmap = gpuImage.getBitmapWithFilterApplied();
+                        if (Thread.currentThread().isInterrupted()) return;
 
-                        previewCache.put(position, processedBitmap);
+                        Bitmap processedBitmap;
+                        synchronized (gpuImageHelper) {
+                            gpuImageHelper.setImage(thumbnailBitmap);
+                            gpuImageHelper.setFilter(item.filter);
+                            processedBitmap = gpuImageHelper.getBitmapWithFilterApplied();
+                        }
 
-                        new Handler(Looper.getMainLooper()).post(() -> {
-                            notifyItemChanged(position);
-                        });
+                        if (processedBitmap != null) {
+                            previewCache.put(pos, processedBitmap);
+                            mainHandler.post(() -> {
+                                notifyItemChanged(pos);
+                            });
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -90,15 +113,6 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.FilterView
             }
         }
 
-        if (position == selectedPosition) {
-            holder.txtFilterName.setTextColor(Color.YELLOW);
-            holder.txtFilterName.setTypeface(null, android.graphics.Typeface.BOLD);
-            holder.itemView.setBackgroundColor(Color.parseColor("#444444"));
-        } else {
-            holder.txtFilterName.setTextColor(Color.WHITE);
-            holder.txtFilterName.setTypeface(null, android.graphics.Typeface.NORMAL);
-            holder.itemView.setBackgroundColor(Color.TRANSPARENT);
-        }
         holder.itemView.setOnClickListener(v -> {
             int previousPosition = selectedPosition;
             selectedPosition = holder.getAdapterPosition();

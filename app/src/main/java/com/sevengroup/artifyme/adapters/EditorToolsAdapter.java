@@ -32,8 +32,35 @@ public class EditorToolsAdapter extends RecyclerView.Adapter<EditorToolsAdapter.
     @Override
     public void onBindViewHolder(@NonNull ToolViewHolder holder, int position) {
         String toolName = toolList.get(position);
-        holder.txtToolName.setText(toolName);
-        holder.imgToolIcon.setImageResource(R.drawable.edit_24px); 
+        int iconResId = R.drawable.edit_24px; // Icon mặc định
+
+        int nameResId = 0;
+        switch (toolName) {
+            case "Crop":
+                nameResId = R.string.tool_crop;
+                iconResId = R.drawable.crop_24px; //
+                break;
+            case "Adjust":
+                nameResId = R.string.tool_adjust;
+                iconResId = R.drawable.adjust_24px; //
+                break;
+            case "Filter":
+                nameResId = R.string.tool_filter;
+                iconResId = R.drawable.filter_24px; //
+                break;
+            case "Text":
+                nameResId = R.string.tool_text;
+                iconResId = R.drawable.title_24px; //
+                break;
+        }
+
+        if (nameResId != 0) {
+            holder.txtToolName.setText(nameResId);
+        } else {
+            holder.txtToolName.setText(toolName);
+        }
+
+        holder.imgToolIcon.setImageResource(iconResId);
         holder.itemView.setOnClickListener(v -> toolClickListener.onToolSelected(toolName));
     }
 

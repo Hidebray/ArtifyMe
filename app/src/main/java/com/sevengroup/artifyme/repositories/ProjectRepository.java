@@ -10,6 +10,7 @@ import com.sevengroup.artifyme.database.dao.ProjectDao;
 import com.sevengroup.artifyme.database.entities.Project;
 import com.sevengroup.artifyme.database.entities.Version;
 import com.sevengroup.artifyme.utils.AppConstants;
+import com.sevengroup.artifyme.utils.AppExecutors;
 import com.sevengroup.artifyme.utils.StorageUtils;
 import java.io.File;
 import java.util.List;
@@ -19,7 +20,6 @@ import java.util.concurrent.Executors;
 public class ProjectRepository {
     private final ProjectDao projectDao;
     private final Application application;
-    private final ExecutorService executor;
     private static ProjectRepository INSTANCE;
 
     public static synchronized ProjectRepository getInstance(Application application) {
@@ -30,7 +30,6 @@ public class ProjectRepository {
     private ProjectRepository(Application application) {
         this.application = application;
         this.projectDao = AppDatabase.getInstance(application).projectDao();
-        this.executor = Executors.newSingleThreadExecutor();
     }
 
     public LiveData<List<ProjectWithLatestVersion>> getAllProjects() {
@@ -42,11 +41,11 @@ public class ProjectRepository {
     }
 
     public void getLatestImagePath(long projectId, OnResultListener<String> listener) {
-        executor.execute(() -> listener.onResult(projectDao.getLatestImagePath(projectId)));
+        AppExecutors.getInstance().diskIO().execute(() -> listener.onResult(projectDao.getLatestImagePath(projectId)));
     }
 
     public void createProject(Uri sourceUri, OnResultListener<Boolean> listener) {
-        executor.execute(() -> {
+        AppExecutors.getInstance().diskIO().execute(() -> {
             String newPath = StorageUtils.copyImageToAppStorage(application, sourceUri);
             if (newPath == null) {
                 listener.onResult(false);
@@ -62,7 +61,7 @@ public class ProjectRepository {
     }
 
     public void deleteProject(long projectId, OnResultListener<Boolean> listener) {
-        executor.execute(() -> {
+        AppExecutors.getInstance().diskIO().execute(() -> {
             List<String> filePaths = projectDao.getAllFilePathsForProject(projectId);
             if (filePaths != null) {
                 for (String path : filePaths) {
@@ -78,7 +77,7 @@ public class ProjectRepository {
     }
 
     public void saveNewVersion(long projectId, String imagePath, OnResultListener<Boolean> listener) {
-        executor.execute(() -> {
+        AppExecutors.getInstance().diskIO().execute(() -> {
             if (imagePath == null) {
                 listener.onResult(false);
                 return;

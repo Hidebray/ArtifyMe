@@ -19,7 +19,7 @@ public class InfoTabsAdapter extends FragmentStateAdapter {
     @NonNull @Override
     public Fragment createFragment(int position) {
         if (position == 0) return InfoHistoryFragment.newInstance(projectId);
-        return InfoDetailsFragment.newInstance();
+        return InfoDetailsFragment.newInstance(projectId);
     }
 
     @Override public int getItemCount() { return 2; }

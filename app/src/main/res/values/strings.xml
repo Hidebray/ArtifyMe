@@ -1,3 +1,67 @@
 <resources>
     <string name="app_name">ArtifyMe</string>
+    <string name="app_slogan">Ứng dụng chỉnh sửa ảnh thông minh</string>
+
+    <string name="empty_state_title">Chưa có dự án nào</string>
+    <string name="empty_state_desc">Nhấn nút (+) để bắt đầu sáng tạo</string>
+    <string name="btn_new_project">Dự án mới</string>
+    <string name="permission_required">Cần cấp quyền truy cập ảnh để sử dụng.</string>
+
+    <string name="default_project_name">Dự án</string>
+    <string name="action_share">Chia sẻ</string>
+    <string name="action_edit">Chỉnh sửa</string>
+    <string name="action_delete">Xóa bỏ</string>
+    <string name="dialog_delete_title">Xóa Dự Án</string>
+    <string name="dialog_delete_msg">Bạn có chắc chắn muốn xóa vĩnh viễn dự án này?</string>
+    <string name="btn_delete">Xóa</string>
+    <string name="btn_cancel">Hủy</string>
+    <string name="msg_delete_success">Đã xóa dự án.</string>
+    <string name="msg_save_gallery_success">Đã lưu vào Thư viện!</string>
+    <string name="msg_save_gallery_error">Lỗi: Không thể lưu.</string>
+    <string name="msg_error_load_project">Lỗi: Không thể tải dự án</string>
+
+    <string name="btn_save">Lưu</string>
+    <string name="btn_done">Xong</string>
+    <string name="msg_save_success">Đã lưu thành công!</string>
+    <string name="msg_error_load_image">Lỗi: Không thể tải ảnh.</string>
+    <string name="msg_error_save_file">Lỗi: Không thể lưu file.</string>
+    <string name="msg_crop_applied">Đã cắt ảnh! Nhấn Undo để quay lại.</string>
+    <string name="msg_crop_error">Lỗi cắt ảnh: %s</string>
+    <string name="msg_restore_original">Đã khôi phục ảnh gốc.</string>
+
+    <string name="tool_crop">Cắt</string>
+    <string name="tool_adjust">Điều chỉnh</string>
+    <string name="tool_filter">Bộ lọc</string>
+    <string name="tool_text">Chữ</string>
+
+    <string name="adjust_title">Điều chỉnh</string>
+    <string name="adj_brightness">Độ sáng</string>
+    <string name="adj_contrast">Tương phản</string>
+    <string name="adj_saturation">Bão hòa</string>
+    <string name="adj_warmth">Ấm/Lạnh</string>
+    <string name="adj_vignette">Viền tối</string>
+    <string name="adj_tint">Tint</string>
+    <string name="adj_grain">Hạt phim</string>
+    <string name="adj_sharpness">Độ sắc nét</string>
+    <string name="adj_exposure">Phơi sáng</string>
+    <string name="adj_highlights">Vùng sáng</string>
+    <string name="adj_shadows">Vùng tối</string>
+    <string name="adj_gamma">Gamma</string>
+
+    <string name="filter_title">Bộ lọc màu</string>
+
+    <string name="text_title">Thêm Chữ</string>
+    <string name="text_hint">Nhập nội dung...</string>
+
+    <string name="tab_history">Lịch sử</string>
+    <string name="tab_details">Chi tiết</string>
+    <string name="version_original">Gốc</string>
+    <string name="version_edited">Đã chỉnh sửa</string>
+    <string name="info_name">Tên</string>
+    <string name="info_time">Thời gian</string>
+    <string name="info_resolution">Độ phân giải</string>
+    <string name="info_size">Kích cỡ</string>
+    <string name="info_path">Đường dẫn</string>
+
+    <string name="default_text">Text</string>
 </resources>

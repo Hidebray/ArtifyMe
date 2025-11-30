@@ -38,9 +38,8 @@ public class AdjustOptionsAdapter extends RecyclerView.Adapter<AdjustOptionsAdap
         AdjustFragment.AdjustOptionModel option = options.get(position);
         holder.txtName.setText(option.name);
         holder.imgIcon.setImageResource(option.iconResId);
-        int color = (position == selectedPosition) ? Color.YELLOW : Color.WHITE;
-        holder.txtName.setTextColor(color);
-        holder.imgIcon.setColorFilter(color);
+        boolean isSelected = (position == selectedPosition);
+        holder.itemView.setSelected(isSelected);
         holder.itemView.setOnClickListener(v -> {
             int oldPos = selectedPosition;
             selectedPosition = holder.getAdapterPosition();

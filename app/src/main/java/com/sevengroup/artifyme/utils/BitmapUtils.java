@@ -3,6 +3,8 @@ package com.sevengroup.artifyme.utils;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Pair;
+
 import java.io.File;
 import java.io.FileOutputStream;
 
@@ -46,5 +48,22 @@ public class BitmapUtils {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public static Pair<Integer, Integer> getImageResolution(String imagePath) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+
+        BitmapFactory.decodeFile(imagePath, options);
+
+        int width = options.outWidth;
+        int height = options.outHeight;
+
+        return new Pair<>(width, height);
+    }
+
+    public static long getImageSizeInByte(String imagePath) {
+        File imageFile = new File(imagePath);
+        return imageFile.exists() ? imageFile.length() : 0L;
     }
 }

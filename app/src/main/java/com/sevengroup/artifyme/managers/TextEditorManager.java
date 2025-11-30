@@ -12,6 +12,7 @@ public class TextEditorManager {
     public TextEditorManager(Context context, PhotoEditorView view) {
         this.mPhotoEditor = new PhotoEditor.Builder(context, view)
                 .setPinchTextScalable(true)
+                .setClipSourceImage(true)
                 .build();
     }
 
@@ -21,5 +22,15 @@ public class TextEditorManager {
 
     public void saveImage(@NonNull OnSaveBitmap onSaveBitmap) {
         mPhotoEditor.saveAsBitmap(onSaveBitmap);
+    }
+
+    public PhotoEditor getPhotoEditor() {
+        return mPhotoEditor;
+    }
+
+    public void clearAllViews() {
+        if (mPhotoEditor != null) {
+            mPhotoEditor.clearAllViews();
+        }
     }
 }

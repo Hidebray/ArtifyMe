@@ -43,6 +43,9 @@ public class InfoBottomSheetFragment extends BottomSheetDialogFragment {
         ViewPager2 viewPager = view.findViewById(R.id.view_pager_info);
         InfoTabsAdapter tabsAdapter = new InfoTabsAdapter(getChildFragmentManager(), getLifecycle(), currentProjectId);
         viewPager.setAdapter(tabsAdapter);
-        new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> tab.setText(tabTitles[position])).attach();
-    }
+
+        new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
+            if (position == 0) tab.setText(R.string.tab_history);
+            else tab.setText(R.string.tab_details);
+        }).attach();    }
 }

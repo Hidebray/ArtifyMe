@@ -7,6 +7,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import com.sevengroup.artifyme.database.entities.Version;
 import com.sevengroup.artifyme.repositories.ProjectRepository;
+import com.sevengroup.artifyme.utils.AppExecutors;
 import com.sevengroup.artifyme.utils.StorageUtils;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -14,7 +15,6 @@ import java.util.concurrent.Executors;
 
 public class ProjectDetailViewModel extends AndroidViewModel {
     private final ProjectRepository repository;
-    private final ExecutorService exportExecutor;
     private final MutableLiveData<String> latestImagePath = new MutableLiveData<>();
     private final MutableLiveData<String> exportStatusMessage = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isExporting = new MutableLiveData<>();
@@ -23,7 +23,6 @@ public class ProjectDetailViewModel extends AndroidViewModel {
     public ProjectDetailViewModel(@NonNull Application application) {
         super(application);
         repository = ProjectRepository.getInstance(application);
-        exportExecutor = Executors.newSingleThreadExecutor();
     }
 
     public LiveData<List<Version>> getProjectHistory(long projectId) { return repository.getProjectHistory(projectId); }
@@ -46,7 +45,7 @@ public class ProjectDetailViewModel extends AndroidViewModel {
 
     public void exportImageToGallery(String imagePath) {
         isExporting.postValue(true);
-        exportExecutor.execute(() -> {
+        AppExecutors.getInstance().diskIO().execute(() -> {
             boolean success = StorageUtils.exportFileToPublicGallery(getApplication(), imagePath);
             exportStatusMessage.postValue(success ? "Đã lưu vào Thư viện!" : "Lỗi: Không thể lưu.");
             isExporting.postValue(false);
@@ -56,6 +55,5 @@ public class ProjectDetailViewModel extends AndroidViewModel {
     @Override
     protected void onCleared() {
         super.onCleared();
-        exportExecutor.shutdown();
     }
 }

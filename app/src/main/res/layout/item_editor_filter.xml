@@ -1,16 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="100dp" android:layout_height="120dp"
-    android:orientation="vertical" android:gravity="center"
-    android:padding="8dp" android:background="?attr/selectableItemBackground">
-    <ImageView
-        android:id="@+id/imgFilterPreview"
-        android:layout_width="match_parent" android:layout_height="80dp"
-        android:scaleType="centerCrop" />
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="100dp"
+    android:layout_height="120dp"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="8dp"
+    android:background="@drawable/selector_bg">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@android:color/transparent">
+
+        <ImageView
+            android:id="@+id/imgFilterPreview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            tools:srcCompat="@tools:sample/backgrounds/scenic"/>
+    </androidx.cardview.widget.CardView>
+
     <TextView
         android:id="@+id/txtFilterName"
-        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:textColor="@android:color/white"
-        android:textSize="14sp" />
+        android:textColor="@color/selector_text"
+        android:text="@string/default_text"
+        android:textSize="12sp"
+        android:ellipsize="end"
+        android:maxLines="1" />
 </LinearLayout>
