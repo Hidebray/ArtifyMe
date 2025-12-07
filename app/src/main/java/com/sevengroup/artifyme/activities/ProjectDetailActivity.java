@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -21,6 +20,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.sevengroup.artifyme.R;
 import com.sevengroup.artifyme.fragments.detail.InfoBottomSheetFragment;
+import com.sevengroup.artifyme.fragments.share.ShareBottomSheetFragment;
 import com.sevengroup.artifyme.utils.AppConstants;
 import com.sevengroup.artifyme.viewmodels.ProjectDetailViewModel;
 import java.io.File;
@@ -74,7 +74,8 @@ public class ProjectDetailActivity extends BaseActivity {
             if (data != null) {
                 currentProjectId = data.getLong(AppConstants.KEY_PROJECT_ID, -1L);
                 latestImagePath = data.getString(AppConstants.KEY_IMAGE_PATH);
-                currentProjectName = data.getString(AppConstants.KEY_PROJECT_NAME, getString(R.string.default_project_name));            }
+                currentProjectName = data.getString(AppConstants.KEY_PROJECT_NAME, getString(R.string.default_project_name));
+            }
         }
         if (currentProjectId == -1 || latestImagePath == null) {
             showToast(getString(R.string.msg_error_load_project));
@@ -101,18 +102,10 @@ public class ProjectDetailActivity extends BaseActivity {
         btnBack.setOnClickListener(v -> finish());
         btnInfo.setOnClickListener(v -> showHistoryBottomSheet());
         btnEdit.setOnClickListener(v -> startBasicEditor());
-        btnShare.setOnClickListener(v -> {
-            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        == PackageManager.PERMISSION_GRANTED) {
-                    viewModel.exportImageToGallery(latestImagePath);
-                } else {
-                    requestWritePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-                }
-            } else {
-                viewModel.exportImageToGallery(latestImagePath);
-            }
-        });
+
+        // NEW: Open share bottom sheet instead of exporting directly
+        btnShare.setOnClickListener(v -> showShareBottomSheet());
+
         btnDelete.setOnClickListener(v -> confirmDelete());
     }
 
@@ -147,7 +140,28 @@ public class ProjectDetailActivity extends BaseActivity {
 
     private void showHistoryBottomSheet() {
         InfoBottomSheetFragment.newInstance(currentProjectId)
-                .show(getSupportFragmentManager(), "bottom_sheet");
+                .show(getSupportFragmentManager(), "info_bottom_sheet");
+    }
+
+    // NEW: Show share bottom sheet with apps and export button
+    private void showShareBottomSheet() {
+        ShareBottomSheetFragment shareSheet = ShareBottomSheetFragment.newInstance(latestImagePath);
+        shareSheet.setOnExportClickListener(this::handleExport);
+        shareSheet.show(getSupportFragmentManager(), "share_bottom_sheet");
+    }
+
+    // Export function (same as old share button)
+    private void handleExport() {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED) {
+                viewModel.exportImageToGallery(latestImagePath);
+            } else {
+                requestWritePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            }
+        } else {
+            viewModel.exportImageToGallery(latestImagePath);
+        }
     }
 
     private void startBasicEditor() {
