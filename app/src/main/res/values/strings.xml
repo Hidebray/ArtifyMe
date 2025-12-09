@@ -15,6 +15,7 @@
     <string name="dialog_delete_msg">Bạn có chắc chắn muốn xóa vĩnh viễn dự án này?</string>
     <string name="btn_delete">Xóa</string>
     <string name="btn_cancel">Hủy</string>
+    <string name="btn_export">Export</string>
     <string name="msg_delete_success">Đã xóa dự án.</string>
     <string name="msg_save_gallery_success">Đã lưu vào Thư viện!</string>
     <string name="msg_save_gallery_error">Lỗi: Không thể lưu.</string>

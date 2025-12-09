@@ -408,15 +408,6 @@ public class BasicEditorActivity extends BaseActivity implements
                     photoEdtView.getSource().setAlpha(1f);
 
                     mTextManager.getPhotoEditor().saveAsBitmap(saveBitmap -> {
-                        // --- XÓA ĐOẠN CODE NÀY ---
-                        // if (finalBmp != null && finalBmp != mainBitmap && !finalBmp.isRecycled()) {
-                        //     finalBmp.recycle();
-                        // }
-                        // --------------------------
-                        // Lý do: finalBmp đang được photoEdtView hiển thị.
-                        // Không được recycle nó lúc này.
-                        // Nó sẽ tự được dọn dẹp khi bạn set ảnh mới sau khi crop xong.
-
                         AppExecutors.getInstance().diskIO().execute(() -> {
                             try {
                                 File tempSource = new File(getCacheDir(), "temp_crop_input_" + System.currentTimeMillis() + ".png");
