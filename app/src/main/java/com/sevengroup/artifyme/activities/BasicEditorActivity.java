@@ -248,17 +248,18 @@ public class BasicEditorActivity extends BaseActivity implements
 
     private void saveChanges() {
         showLoading(prbEditor, true);
-        AppExecutors.getInstance().diskIO().execute(() -> {
+        AppExecutors.getInstance().computation().execute(() -> {
             try {
                 Bitmap processedBitmap = mFilterManager.getBitmapWithFiltersApplied(this, mainBitmap);
                 if (processedBitmap == null) processedBitmap = mainBitmap;
+
                 Bitmap finalBmp = processedBitmap;
                 runOnUiThread(() -> {
                     if (isFinishing() || isDestroyed()) return;
                     photoEdtView.getSource().setImageBitmap(finalBmp);
                     photoEdtView.getSource().setAlpha(1f);
                     mTextManager.saveImage(savedBitmap -> viewModel.saveEditedImage(currentProjectId, savedBitmap));
-                });
+                    });
             } catch (Exception e) {
                 e.printStackTrace();
                 runOnUiThread(() -> {
@@ -405,7 +406,7 @@ public class BasicEditorActivity extends BaseActivity implements
 
     private void startCrop() {
         showLoading(prbEditor, true);
-        AppExecutors.getInstance().diskIO().execute(() -> {
+        AppExecutors.getInstance().computation().execute(() -> {
             try {
                 Bitmap sourceBitmap = mFilterManager.getBitmapWithFiltersApplied(getApplicationContext(), mainBitmap);
                 if (sourceBitmap == null) sourceBitmap = mainBitmap;
@@ -414,7 +415,7 @@ public class BasicEditorActivity extends BaseActivity implements
                     if (isFinishing() || isDestroyed()) return;
                     photoEdtView.getSource().setImageBitmap(finalBmp);
                     photoEdtView.getSource().setAlpha(1f);
-                    mTextManager.saveImage(saveBitmap -> viewModel.prepareForCrop(saveBitmap));
+                    mTextManager.getPhotoEditor().saveAsBitmap(saveBitmap -> viewModel.prepareForCrop(saveBitmap));
                 });
             } catch (Exception e) {
                 runOnUiThread(() -> handleCropCancelOrError("Lỗi khởi tạo: " + e.getMessage()));

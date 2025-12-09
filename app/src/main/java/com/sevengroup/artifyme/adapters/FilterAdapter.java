@@ -81,7 +81,7 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.FilterView
         } else {
             holder.imgFilterPreview.setImageBitmap(thumbnailBitmap);
 
-            appExecutors.diskIO().execute(() -> {
+            appExecutors.computation().execute(() -> {
                 if (previewCache.containsKey(position)) {
                     mainHandler.post(() -> notifyItemChanged(position));
                     return;
