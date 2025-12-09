@@ -6,12 +6,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.widget.ViewPager2;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.sevengroup.artifyme.R;
 import com.sevengroup.artifyme.adapters.InfoTabsAdapter;
+import com.sevengroup.artifyme.viewmodels.ProjectDetailViewModel;
 
 public class InfoBottomSheetFragment extends BottomSheetDialogFragment {
     private long currentProjectId = -1L;
@@ -47,5 +49,13 @@ public class InfoBottomSheetFragment extends BottomSheetDialogFragment {
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
             if (position == 0) tab.setText(R.string.tab_history);
             else tab.setText(R.string.tab_details);
-        }).attach();    }
+        }).attach();
+
+        ProjectDetailViewModel viewModel = new ViewModelProvider(requireActivity()).get(ProjectDetailViewModel.class);
+        viewModel.getNavigateToEditor().observe(getViewLifecycleOwner(), path -> {
+            if (path != null) {
+                dismiss();
+            }
+        });
+    }
 }

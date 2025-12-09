@@ -20,7 +20,16 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.HistoryV
     private List<Version> versions = new ArrayList<>();
     private final Context context;
 
-    public HistoryAdapter(Context context) { this.context = context; }
+    private final OnHistoryItemClickListener listener;
+
+    public interface OnHistoryItemClickListener {
+        void onHistoryItemClick(Version version);
+    }
+
+    public HistoryAdapter(Context context, OnHistoryItemClickListener listener) {
+        this.context = context;
+        this.listener = listener;
+    }
 
     @NonNull @Override
     public HistoryViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -37,6 +46,12 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.HistoryV
         if (imageFile.exists()) {
             Glide.with(context).load(imageFile).centerCrop().into(holder.imgThumbnail);
         }
+
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onHistoryItemClick(currentVersion);
+            }
+        });
     }
 
     @Override public int getItemCount() { return versions.size(); }

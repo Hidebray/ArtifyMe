@@ -17,6 +17,7 @@ import com.sevengroup.artifyme.viewmodels.ProjectDetailViewModel;
 public class InfoHistoryFragment extends Fragment {
     private HistoryAdapter historyAdapter;
     private long currentProjectId = -1L;
+    private ProjectDetailViewModel viewModel;
 
     public static InfoHistoryFragment newInstance(long projectId) {
         InfoHistoryFragment fragment = new InfoHistoryFragment();
@@ -40,14 +41,15 @@ public class InfoHistoryFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        viewModel = new ViewModelProvider(requireActivity()).get(ProjectDetailViewModel.class);
         RecyclerView rcvHistory = view.findViewById(R.id.rcvHistory);
-        historyAdapter = new HistoryAdapter(getContext());
+        historyAdapter = new HistoryAdapter(getContext(), version -> {
+            viewModel.onEditVersionRequest(version.imagePath);
+        });
         rcvHistory.setLayoutManager(new LinearLayoutManager(getContext()));
         rcvHistory.setAdapter(historyAdapter);
 
         if (currentProjectId != -1L) {
-            // ViewModel được lấy từ Activity cha để share dữ liệu
-            ProjectDetailViewModel viewModel = new ViewModelProvider(requireActivity()).get(ProjectDetailViewModel.class);
             viewModel.getProjectHistory(currentProjectId).observe(getViewLifecycleOwner(), versions -> {
                 if (versions != null) historyAdapter.setVersions(versions);
             });

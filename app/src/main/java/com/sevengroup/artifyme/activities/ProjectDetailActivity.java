@@ -121,6 +121,12 @@ public class ProjectDetailActivity extends BaseActivity {
                 finish();
             }
         });
+        viewModel.getNavigateToEditor().observe(this, path -> {
+            if (path != null) {
+                startBasicEditor(path);
+                viewModel.onEditVersionNavigated();
+            }
+        });
     }
 
     private void loadLatestImage() {
@@ -159,10 +165,13 @@ public class ProjectDetailActivity extends BaseActivity {
     }
 
     private void startBasicEditor() {
+        startBasicEditor(latestImagePath);
+    }
+    private void startBasicEditor(String imagePath) {
         Intent intent = new Intent(this, BasicEditorActivity.class);
         Bundle data = new Bundle();
         data.putLong(AppConstants.KEY_PROJECT_ID, currentProjectId);
-        data.putString(AppConstants.KEY_IMAGE_PATH, latestImagePath);
+        data.putString(AppConstants.KEY_IMAGE_PATH, imagePath);
         intent.putExtras(data);
         editorResultLauncher.launch(intent);
     }

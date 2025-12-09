@@ -21,6 +21,7 @@ public class ProjectDetailViewModel extends AndroidViewModel {
     private final MutableLiveData<String> exportStatusMessage = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isExporting = new MutableLiveData<>();
     private final MutableLiveData<Boolean> projectDeleted = new MutableLiveData<>();
+    private final MutableLiveData<String> navigateToEditor = new MutableLiveData<>();
 
     public ProjectDetailViewModel(@NonNull Application application) {
         super(application);
@@ -32,6 +33,7 @@ public class ProjectDetailViewModel extends AndroidViewModel {
     public LiveData<String> getExportStatusMessage() { return exportStatusMessage; }
     public LiveData<Boolean> getIsExporting() { return isExporting; }
     public LiveData<Boolean> getProjectDeleted() { return projectDeleted; }
+    public LiveData<String> getNavigateToEditor() { return navigateToEditor; }
 
     public void refreshLatestImagePath(long projectId) {
         repository.getLatestImagePath(projectId, path -> {
@@ -55,6 +57,14 @@ public class ProjectDetailViewModel extends AndroidViewModel {
             exportStatusMessage.postValue(msg);
             isExporting.postValue(false);
         });
+    }
+
+    public void onEditVersionRequest(String imagePath) {
+        navigateToEditor.setValue(imagePath);
+    }
+
+    public void onEditVersionNavigated() {
+        navigateToEditor.setValue(null);
     }
 
     @Override
