@@ -5,6 +5,8 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+
+import com.sevengroup.artifyme.R;
 import com.sevengroup.artifyme.database.entities.Version;
 import com.sevengroup.artifyme.repositories.ProjectRepository;
 import com.sevengroup.artifyme.utils.AppExecutors;
@@ -47,7 +49,10 @@ public class ProjectDetailViewModel extends AndroidViewModel {
         isExporting.postValue(true);
         AppExecutors.getInstance().diskIO().execute(() -> {
             boolean success = StorageUtils.exportFileToPublicGallery(getApplication(), imagePath);
-            exportStatusMessage.postValue(success ? "Đã lưu vào Thư viện!" : "Lỗi: Không thể lưu.");
+            String msg = success
+                    ? getApplication().getString(R.string.msg_save_gallery_success)
+                    : getApplication().getString(R.string.msg_save_gallery_error);
+            exportStatusMessage.postValue(msg);
             isExporting.postValue(false);
         });
     }

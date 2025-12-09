@@ -9,7 +9,8 @@ import ja.burhanrashid52.photoeditor.PhotoEditorView;
 public class TextEditorManager {
     private PhotoEditor mPhotoEditor;
 
-    public TextEditorManager(Context context, PhotoEditorView view) {
+    public TextEditorManager(PhotoEditorView view) {
+        Context context = view.getContext();
         this.mPhotoEditor = new PhotoEditor.Builder(context, view)
                 .setPinchTextScalable(true)
                 .setClipSourceImage(true)

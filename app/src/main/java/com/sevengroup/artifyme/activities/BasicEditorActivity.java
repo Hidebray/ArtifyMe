@@ -28,6 +28,7 @@ import com.sevengroup.artifyme.managers.FilterEditorManager;
 import com.sevengroup.artifyme.managers.HistoryManager;
 import com.sevengroup.artifyme.managers.TextEditorManager;
 import com.sevengroup.artifyme.models.EditorState;
+import com.sevengroup.artifyme.models.EditorToolType;
 import com.sevengroup.artifyme.utils.AppConstants;
 import com.sevengroup.artifyme.utils.AppExecutors;
 import com.sevengroup.artifyme.utils.FilterGenerator;
@@ -68,7 +69,7 @@ public class BasicEditorActivity extends BaseActivity implements
     private long currentProjectId;
     private String latestImagePath;
     private Bitmap mainBitmap;
-    private final List<String> toolList = Arrays.asList("Crop", "Adjust", "Filter", "Text");
+    private final List<EditorToolType> toolList = Arrays.asList(EditorToolType.values());
     private OnBackPressedCallback onBackPressedCallback;
 
     private final ActivityResultLauncher<Intent> cropResultLauncher =
@@ -99,7 +100,7 @@ public class BasicEditorActivity extends BaseActivity implements
         initViews();
         setupBackPressHandling();
 
-        mTextManager = new TextEditorManager(this, photoEdtView);
+        mTextManager = new TextEditorManager(photoEdtView);
         mFilterManager = new FilterEditorManager(gpuImgView);
         mAdjustManager = mFilterManager.getAdjustManager();
 
@@ -270,22 +271,25 @@ public class BasicEditorActivity extends BaseActivity implements
     }
 
     @Override
-    public void onToolSelected(String toolName) {
+    public void onToolSelected(EditorToolType toolType) {
         mStateBeforeEdit = captureCurrentState();
-        if (isImageCroppedAndBaked && (toolName.equals("Adjust") || toolName.equals("Filter"))) {
+
+        if (isImageCroppedAndBaked && (toolType == EditorToolType.ADJUST || toolType == EditorToolType.FILTER)) {
             mFilterManager.setImage(mainBitmap);
             gpuImgView.setVisibility(View.VISIBLE);
             isImageCroppedAndBaked = false;
         }
 
-        switch (toolName) {
-            case "Crop": startCrop(); break;
-            case "Adjust":
+        switch (toolType) {
+            case CROP:
+                startCrop();
+                break;
+            case ADJUST:
                 setGpuMode(true);
                 photoEdtView.setVisibility(View.VISIBLE);
                 openFragment(AdjustFragment.newInstance(mAdjustManager.getAllSettings()));
                 break;
-            case "Filter":
+            case FILTER:
                 setGpuMode(true);
                 photoEdtView.setVisibility(View.VISIBLE);
                 int currentIndex = mFilterManager.getFilterIndex();
@@ -298,7 +302,7 @@ public class BasicEditorActivity extends BaseActivity implements
                 });
                 openFragment(filterFragment);
                 break;
-            case "Text":
+            case TEXT:
                 setGpuMode(true);
                 photoEdtView.setVisibility(View.VISIBLE);
                 openFragment(TextFragment.newInstance());

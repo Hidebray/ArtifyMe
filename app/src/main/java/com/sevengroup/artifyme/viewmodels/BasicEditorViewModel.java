@@ -9,6 +9,8 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+
+import com.sevengroup.artifyme.R;
 import com.sevengroup.artifyme.repositories.ProjectRepository;
 import com.sevengroup.artifyme.utils.AppExecutors;
 import com.sevengroup.artifyme.utils.BitmapUtils;
@@ -43,7 +45,7 @@ public class BasicEditorViewModel extends AndroidViewModel {
         AppExecutors.getInstance().diskIO().execute(() -> {
             Bitmap bitmap = BitmapUtils.loadSafeBitmap(imagePath);
             if (bitmap != null) loadedBitmap.postValue(bitmap);
-            else errorMessage.postValue("Lỗi: Không thể tải ảnh.");
+            else errorMessage.postValue(getApplication().getString(R.string.msg_error_load_image));
             isLoading.postValue(false);
         });
     }
@@ -53,7 +55,7 @@ public class BasicEditorViewModel extends AndroidViewModel {
         AppExecutors.getInstance().diskIO().execute(() -> {
             String newPath = BitmapUtils.saveBitmapToAppStorage(getApplication(), bitmapToSave);
             if (newPath == null) {
-                errorMessage.postValue("Lỗi: Không thể lưu file.");
+                errorMessage.postValue(getApplication().getString(R.string.msg_error_save_file));
                 isSaving.postValue(false);
                 return;
             }
@@ -66,7 +68,7 @@ public class BasicEditorViewModel extends AndroidViewModel {
 
     public void prepareForCrop(Bitmap currentBitmap) {
         if (currentBitmap == null) {
-            cropError.postValue("Lỗi: Không thể lấy dữ liệu ảnh.");
+            cropError.postValue(getApplication().getString(R.string.msg_crop_data_error));
             return;
         }
 
@@ -90,7 +92,7 @@ public class BasicEditorViewModel extends AndroidViewModel {
                 cropStartEvent.postValue(new Pair<>(sourceUri, destUri));
 
             } catch (Exception e) {
-                cropError.postValue("Lỗi chuẩn bị ảnh: " + e.getMessage());
+                cropError.postValue(getApplication().getString(R.string.msg_crop_prepare_error, e.getMessage()));
                 isLoading.postValue(false);
             }
         });
@@ -106,10 +108,10 @@ public class BasicEditorViewModel extends AndroidViewModel {
                 if (croppedBitmap != null) {
                     loadedBitmap.postValue(croppedBitmap);
                 } else {
-                    errorMessage.postValue("Không thể tải ảnh sau khi cắt.");
+                    errorMessage.postValue(getApplication().getString(R.string.msg_load_cropped_error));
                 }
             } catch (Exception e) {
-                errorMessage.postValue("Lỗi xử lý ảnh: " + e.getMessage());
+                errorMessage.postValue(getApplication().getString(R.string.msg_process_image_error, e.getMessage()));
             } finally {
                 isLoading.postValue(false);
             }

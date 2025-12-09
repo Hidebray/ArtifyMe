@@ -8,17 +8,19 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.sevengroup.artifyme.R;
+import com.sevengroup.artifyme.models.EditorToolType;
+
 import java.util.List;
 
 public class EditorToolsAdapter extends RecyclerView.Adapter<EditorToolsAdapter.ToolViewHolder> {
-    private final List<String> toolList;
+    private final List<EditorToolType> toolList;
     private final OnToolClickListener toolClickListener;
 
     public interface OnToolClickListener {
-        void onToolSelected(String toolName);
+        void onToolSelected(EditorToolType toolType);
     }
 
-    public EditorToolsAdapter (List<String> toolList, OnToolClickListener toolClickListener) {
+    public EditorToolsAdapter(List<EditorToolType> toolList, OnToolClickListener toolClickListener) {
         this.toolList = toolList;
         this.toolClickListener = toolClickListener;
     }
@@ -31,37 +33,12 @@ public class EditorToolsAdapter extends RecyclerView.Adapter<EditorToolsAdapter.
 
     @Override
     public void onBindViewHolder(@NonNull ToolViewHolder holder, int position) {
-        String toolName = toolList.get(position);
-        int iconResId = R.drawable.edit_24px; // Icon mặc định
+        EditorToolType tool = toolList.get(position);
 
-        int nameResId = 0;
-        switch (toolName) {
-            case "Crop":
-                nameResId = R.string.tool_crop;
-                iconResId = R.drawable.crop_24px; //
-                break;
-            case "Adjust":
-                nameResId = R.string.tool_adjust;
-                iconResId = R.drawable.adjust_24px; //
-                break;
-            case "Filter":
-                nameResId = R.string.tool_filter;
-                iconResId = R.drawable.filter_24px; //
-                break;
-            case "Text":
-                nameResId = R.string.tool_text;
-                iconResId = R.drawable.title_24px; //
-                break;
-        }
+        holder.txtToolName.setText(tool.getNameResId());
+        holder.imgToolIcon.setImageResource(tool.getIconResId());
 
-        if (nameResId != 0) {
-            holder.txtToolName.setText(nameResId);
-        } else {
-            holder.txtToolName.setText(toolName);
-        }
-
-        holder.imgToolIcon.setImageResource(iconResId);
-        holder.itemView.setOnClickListener(v -> toolClickListener.onToolSelected(toolName));
+        holder.itemView.setOnClickListener(v -> toolClickListener.onToolSelected(tool));
     }
 
     @Override public int getItemCount() { return toolList.size(); }

@@ -80,7 +80,7 @@ public class ShareBottomSheetFragment extends BottomSheetDialogFragment {
             rcvShareApps.setAdapter(adapter);
         } else {
             // Show message if no apps available
-            Toast.makeText(getContext(), "Không tìm thấy ứng dụng chia sẻ", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), getString(R.string.msg_no_share_app), Toast.LENGTH_SHORT).show();
         }
 
         // Export button
@@ -184,7 +184,7 @@ public class ShareBottomSheetFragment extends BottomSheetDialogFragment {
             dismiss();
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(getContext(), "Không thể chia sẻ: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), getString(R.string.msg_share_error, e.getMessage()), Toast.LENGTH_SHORT).show();
         }
     }
 }

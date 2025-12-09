@@ -65,4 +65,13 @@
     <string name="info_path">Đường dẫn</string>
 
     <string name="default_text">Text</string>
+
+    <string name="msg_crop_data_error">Lỗi: Không thể lấy dữ liệu ảnh.</string>
+    <string name="msg_crop_prepare_error">Lỗi chuẩn bị ảnh: %s</string>
+    <string name="msg_load_cropped_error">Không thể tải ảnh sau khi cắt.</string>
+    <string name="msg_process_image_error">Lỗi xử lý ảnh: %s</string>
+
+    <string name="msg_no_share_app">Không tìm thấy ứng dụng chia sẻ</string>
+    <string name="msg_image_not_found">Không tìm thấy ảnh</string>
+    <string name="msg_share_error">Không thể chia sẻ: %s</string>
 </resources>
