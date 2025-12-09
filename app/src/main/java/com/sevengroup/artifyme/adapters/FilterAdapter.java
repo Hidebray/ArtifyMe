@@ -2,7 +2,6 @@ package com.sevengroup.artifyme.adapters;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
@@ -13,26 +12,22 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.sevengroup.artifyme.R;
-
+import com.sevengroup.artifyme.utils.AppExecutors;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import jp.co.cyberagent.android.gpuimage.GPUImage;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 
 public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.FilterViewHolder> {
     private final List<FilterModel> filterList;
     private final OnFilterClickListener listener;
-    private  Bitmap thumbnailBitmap;
+    private Bitmap thumbnailBitmap;
     private final Map<Integer, Bitmap> previewCache = new HashMap<>();
-    private final ExecutorService renderExecutor = Executors.newFixedThreadPool(1);
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private int selectedPosition;
-
     private final GPUImage gpuImageHelper;
+    private final AppExecutors appExecutors;
 
     public interface OnFilterClickListener {
         void onFilterSelected(GPUImageFilter filter, int position);
@@ -53,12 +48,11 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.FilterView
         this.listener = listener;
         this.selectedPosition = initialPosition;
         this.gpuImageHelper = new GPUImage(context);
+        this.appExecutors = AppExecutors.getInstance();
     }
 
     public void release() {
-        if (!renderExecutor.isShutdown()) {
-            renderExecutor.shutdownNow();
-        }
+        mainHandler.removeCallbacksAndMessages(null);
         previewCache.clear();
     }
 
@@ -85,32 +79,30 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.FilterView
         if (previewCache.containsKey(position)) {
             holder.imgFilterPreview.setImageBitmap(previewCache.get(position));
         } else {
-            holder.imgFilterPreview.setImageBitmap(thumbnailBitmap); // Ảnh tạm
+            holder.imgFilterPreview.setImageBitmap(thumbnailBitmap);
 
-            if (thumbnailBitmap != null && !renderExecutor.isShutdown()) {
-                final int pos = position; // Capture position
-                renderExecutor.execute(() -> {
-                    try {
-                        if (Thread.currentThread().isInterrupted()) return;
+            appExecutors.diskIO().execute(() -> {
+                if (previewCache.containsKey(position)) {
+                    mainHandler.post(() -> notifyItemChanged(position));
+                    return;
+                }
 
-                        Bitmap processedBitmap;
-                        synchronized (gpuImageHelper) {
-                            gpuImageHelper.setImage(thumbnailBitmap);
-                            gpuImageHelper.setFilter(item.filter);
-                            processedBitmap = gpuImageHelper.getBitmapWithFilterApplied();
-                        }
-
-                        if (processedBitmap != null) {
-                            previewCache.put(pos, processedBitmap);
-                            mainHandler.post(() -> {
-                                notifyItemChanged(pos);
-                            });
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                try {
+                    Bitmap processedBitmap;
+                    synchronized (gpuImageHelper) {
+                        gpuImageHelper.setImage(thumbnailBitmap);
+                        gpuImageHelper.setFilter(item.filter);
+                        processedBitmap = gpuImageHelper.getBitmapWithFilterApplied();
                     }
-                });
-            }
+
+                    if (processedBitmap != null) {
+                        previewCache.put(position, processedBitmap);
+                        mainHandler.post(() -> notifyItemChanged(position));
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
         }
 
         holder.itemView.setOnClickListener(v -> {

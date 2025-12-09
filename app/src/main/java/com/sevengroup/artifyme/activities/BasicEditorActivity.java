@@ -2,27 +2,21 @@ package com.sevengroup.artifyme.activities;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.ImageDecoder;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.sevengroup.artifyme.R;
 import com.sevengroup.artifyme.adapters.EditorToolsAdapter;
 import com.sevengroup.artifyme.adapters.FilterAdapter;
@@ -39,14 +33,10 @@ import com.sevengroup.artifyme.utils.AppExecutors;
 import com.sevengroup.artifyme.utils.FilterGenerator;
 import com.sevengroup.artifyme.viewmodels.BasicEditorViewModel;
 import com.yalantis.ucrop.UCrop;
-
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
 import ja.burhanrashid52.photoeditor.PhotoEditorView;
 import jp.co.cyberagent.android.gpuimage.GPUImage;
 import jp.co.cyberagent.android.gpuimage.GPUImageView;
@@ -63,53 +53,39 @@ public class BasicEditorActivity extends BaseActivity implements
     private PhotoEditorView photoEdtView;
     private RecyclerView rcvTools;
     private FrameLayout frameSubTool;
-
     private ImageButton btnClose, btnUndo, btnRedo;
     private TextView btnSave;
-
     private BasicEditorViewModel viewModel;
     private EditorToolsAdapter toolsAdapter;
     private TextEditorManager mTextManager;
     private FilterEditorManager mFilterManager;
     private AdjustEditorManager mAdjustManager;
-
     private final HistoryManager mHistoryManager = new HistoryManager();
     private EditorState mStateBeforeEdit;
-
-    // Undo logic
     private Bitmap mBitmapBeforeDestructiveAction;
     private EditorState mStateBeforeDestructiveAction;
-
-    // Cờ đánh dấu ảnh đã bị cắt/nướng
     private boolean isImageCroppedAndBaked = false;
-
     private long currentProjectId;
     private String latestImagePath;
     private Bitmap mainBitmap;
     private final List<String> toolList = Arrays.asList("Crop", "Adjust", "Filter", "Text");
-
-    private File lastTempSourceFile = null;
-    private File lastTempDestFile = null;
-
     private OnBackPressedCallback onBackPressedCallback;
 
     private final ActivityResultLauncher<Intent> cropResultLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-                try {
-                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        final Uri resultUri = UCrop.getOutput(result.getData());
-                        if (resultUri != null) handleCropResult(resultUri);
-                        else showLoading(prbEditor, false);
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    final Uri resultUri = UCrop.getOutput(result.getData());
+                    if (resultUri != null) {
+                        // Thành công -> Xử lý ảnh
+                        viewModel.processCroppedImage(resultUri);
                     } else {
-                        deleteTempFilesIfAny();
-                        showLoading(prbEditor, false);
-                        if (result.getResultCode() == UCrop.RESULT_ERROR) {
-                            final Throwable cropError = UCrop.getError(result.getData());
-                            showToast("Lỗi cắt ảnh: " + (cropError != null ? cropError.getMessage() : "Unknown"));
-                        }
+                        handleCropCancelOrError("Lỗi: Không tìm thấy ảnh cắt.");
                     }
-                } catch (Exception e) {
-                    showLoading(prbEditor, false);
+                } else if (result.getResultCode() == UCrop.RESULT_ERROR) {
+                    final Throwable cropError = UCrop.getError(result.getData());
+                    handleCropCancelOrError("Lỗi cắt ảnh: " + (cropError != null ? cropError.getMessage() : "Unknown"));
+                } else {
+                    handleCropCancelOrError(null);
                 }
             });
 
@@ -195,28 +171,25 @@ public class BasicEditorActivity extends BaseActivity implements
 
     private void setupViewModel() {
         viewModel = new ViewModelProvider(this).get(BasicEditorViewModel.class);
+
         viewModel.getIsLoading().observe(this, isLoading ->
                 showLoading(prbEditor, isLoading != null && isLoading));
+
         viewModel.getErrorMessage().observe(this, error -> {
             showToast(error);
             if (error != null && error.contains("Cannot load")) finish();
         });
+
         viewModel.getLoadedBitmap().observe(this, bitmap -> {
             if (bitmap != null) {
-                this.mainBitmap = bitmap;
-                photoEdtView.getSource().setScaleType(ImageView.ScaleType.FIT_CENTER);
-                gpuImgView.setScaleType(GPUImage.ScaleType.CENTER_INSIDE);
-
-                mFilterManager.resetAll();
-                mFilterManager.setImage(mainBitmap);
-                photoEdtView.getSource().setImageBitmap(mainBitmap);
-
-                setGpuMode(true);
-                rcvTools.setVisibility(View.VISIBLE);
-                mHistoryManager.clear();
-                updateUndoRedoUI();
+                if (isImageCroppedAndBaked) {
+                    applyCropResultToUI(bitmap);
+                } else {
+                    initializeEditor(bitmap);
+                }
             }
         });
+
         viewModel.getSaveComplete().observe(this, isComplete -> {
             if (isComplete != null && isComplete) {
                 showToast("Đã lưu thành công!");
@@ -224,6 +197,47 @@ public class BasicEditorActivity extends BaseActivity implements
                 finish();
             }
         });
+
+        viewModel.getCropStartEvent().observe(this, pair -> {
+            if (pair != null) {
+                launchUCrop(pair.first, pair.second);
+            }
+        });
+
+        viewModel.getCropError().observe(this, error -> {
+            showLoading(prbEditor, false);
+            showToast(error);
+        });
+    }
+
+    private void initializeEditor(Bitmap bitmap) {
+        this.mainBitmap = bitmap;
+        photoEdtView.getSource().setScaleType(ImageView.ScaleType.FIT_CENTER);
+        gpuImgView.setScaleType(GPUImage.ScaleType.CENTER_INSIDE);
+        mFilterManager.resetAll();
+        mFilterManager.setImage(mainBitmap);
+        photoEdtView.getSource().setImageBitmap(mainBitmap);
+        setGpuMode(true);
+        rcvTools.setVisibility(View.VISIBLE);
+        mHistoryManager.clear();
+        updateUndoRedoUI();
+    }
+
+    private void applyCropResultToUI(Bitmap croppedBitmap) {
+        if (croppedBitmap == null) return;
+        mBitmapBeforeDestructiveAction = mainBitmap;
+        mStateBeforeDestructiveAction = captureCurrentState();
+        mTextManager.clearAllViews();
+        this.mainBitmap = croppedBitmap;
+        photoEdtView.getSource().setImageBitmap(mainBitmap);
+        mFilterManager.setImage(mainBitmap);
+        mFilterManager.resetStateAfterDestructiveEdit();
+        isImageCroppedAndBaked = true;
+        setGpuMode(true);
+        mHistoryManager.clear();
+        updateUndoRedoUI();
+        showToast("Đã cắt ảnh!");
+        deleteTempFilesIfAny();
     }
 
     private void setupToolsRecyclerView() {
@@ -232,37 +246,34 @@ public class BasicEditorActivity extends BaseActivity implements
         rcvTools.setAdapter(toolsAdapter);
     }
 
-    // UPDATE: Hàm Save đã dùng render ngầm để fix viền đen
     private void saveChanges() {
         showLoading(prbEditor, true);
         AppExecutors.getInstance().diskIO().execute(() -> {
             try {
                 Bitmap processedBitmap = mFilterManager.getBitmapWithFiltersApplied(this, mainBitmap);
                 if (processedBitmap == null) processedBitmap = mainBitmap;
-
                 Bitmap finalBmp = processedBitmap;
                 runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
                     photoEdtView.getSource().setImageBitmap(finalBmp);
                     photoEdtView.getSource().setAlpha(1f);
                     mTextManager.saveImage(savedBitmap -> viewModel.saveEditedImage(currentProjectId, savedBitmap));
                 });
             } catch (Exception e) {
                 e.printStackTrace();
-                runOnUiThread(() -> showLoading(prbEditor, false));
+                runOnUiThread(() -> {
+                    if (!isFinishing()) showLoading(prbEditor, false);
+                });
             }
         });
     }
 
-    // UPDATE: Logic chọn tool xử lý ảnh crop
     @Override
     public void onToolSelected(String toolName) {
         mStateBeforeEdit = captureCurrentState();
-
-        // Nếu ảnh đã Crop và người dùng muốn chỉnh màu tiếp -> Nạp lại vào GPU
         if (isImageCroppedAndBaked && (toolName.equals("Adjust") || toolName.equals("Filter"))) {
             mFilterManager.setImage(mainBitmap);
             gpuImgView.setVisibility(View.VISIBLE);
-            photoEdtView.getSource().setImageBitmap(null); // Làm rỗng lớp trên
             isImageCroppedAndBaked = false;
         }
 
@@ -278,11 +289,12 @@ public class BasicEditorActivity extends BaseActivity implements
                 photoEdtView.setVisibility(View.VISIBLE);
                 int currentIndex = mFilterManager.getFilterIndex();
                 FilterFragment filterFragment = FilterFragment.newInstance(currentIndex);
-                // Dùng mainBitmap để tạo thumbnail
-                new Thread(() -> {
+                AppExecutors.getInstance().diskIO().execute(() -> {
                     Bitmap thumb = android.media.ThumbnailUtils.extractThumbnail(mainBitmap, 150, 150);
-                    runOnUiThread(() -> filterFragment.setPreviewBitmap(thumb));
-                }).start();
+                    runOnUiThread(() -> {
+                        if (!isFinishing()) filterFragment.setPreviewBitmap(thumb);
+                    });
+                });
                 openFragment(filterFragment);
                 break;
             case "Text":
@@ -345,7 +357,6 @@ public class BasicEditorActivity extends BaseActivity implements
         return new EditorState(idx, adj);
     }
 
-    // UPDATE: Hàm applyState cập nhật cả UI
     private void applyState(EditorState state) {
         mAdjustManager.applySettings(state.adjustValues);
         List<FilterAdapter.FilterModel> filters = FilterGenerator.getFilters();
@@ -354,13 +365,10 @@ public class BasicEditorActivity extends BaseActivity implements
             mFilterManager.applyFilter(filters.get(state.filterIndex).filter);
         }
 
-        // Refresh UI
         Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.frameSubTool);
         if (fragment instanceof AdjustFragment && fragment.isVisible()) {
             ((AdjustFragment) fragment).refreshValues(state.adjustValues);
         }
-
-        // Chốt saved state
         mFilterManager.saveCurrentState();
     }
 
@@ -397,90 +405,44 @@ public class BasicEditorActivity extends BaseActivity implements
 
     private void startCrop() {
         showLoading(prbEditor, true);
-        new Thread(() -> {
+        AppExecutors.getInstance().diskIO().execute(() -> {
             try {
                 Bitmap sourceBitmap = mFilterManager.getBitmapWithFiltersApplied(getApplicationContext(), mainBitmap);
                 if (sourceBitmap == null) sourceBitmap = mainBitmap;
-
                 Bitmap finalBmp = sourceBitmap;
                 runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
                     photoEdtView.getSource().setImageBitmap(finalBmp);
                     photoEdtView.getSource().setAlpha(1f);
-
-                    mTextManager.getPhotoEditor().saveAsBitmap(saveBitmap -> {
-                        AppExecutors.getInstance().diskIO().execute(() -> {
-                            try {
-                                File tempSource = new File(getCacheDir(), "temp_crop_input_" + System.currentTimeMillis() + ".png");
-                                FileOutputStream out = new FileOutputStream(tempSource);
-                                saveBitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-                                out.flush(); out.close();
-
-                                File tempDest = new File(getCacheDir(), "temp_crop_output_" + System.currentTimeMillis() + ".png");
-                                lastTempSourceFile = tempSource;
-                                lastTempDestFile = tempDest;
-
-                                Uri sourceUri = FileProvider.getUriForFile(BasicEditorActivity.this, getApplicationContext().getPackageName() + ".fileprovider", tempSource);
-                                Uri destUri = Uri.fromFile(tempDest);
-
-                                UCrop.Options options = new UCrop.Options();
-                                options.setCompressionFormat(Bitmap.CompressFormat.PNG);
-                                options.setFreeStyleCropEnabled(true);
-
-                                runOnUiThread(() -> {
-                                    Intent uIntent = UCrop.of(sourceUri, destUri)
-                                            .withOptions(options)
-                                            .getIntent(BasicEditorActivity.this);
-                                    uIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                                    cropResultLauncher.launch(uIntent);
-                                });
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                                runOnUiThread(() -> showLoading(prbEditor, false));
-                            }
-                        });
-                    });
+                    mTextManager.saveImage(saveBitmap -> viewModel.prepareForCrop(saveBitmap));
                 });
             } catch (Exception e) {
-                runOnUiThread(() -> showLoading(prbEditor, false));
-            }
-        }).start();
-    }
-
-    private void handleCropResult(Uri resultUri) {
-        AppExecutors.getInstance().diskIO().execute(() -> {
-            try {
-                Bitmap croppedBitmap = loadBitmapFromUri(resultUri);
-                runOnUiThread(() -> {
-                    if (croppedBitmap != null) applyCropResultToPhotoEditor(croppedBitmap);
-                    else showToast("Lỗi đọc ảnh crop");
-                    deleteTempFilesIfAny();
-                });
-            } catch (Exception e) {
-                runOnUiThread(() -> showToast("Lỗi xử lý ảnh crop"));
-            } finally {
-                runOnUiThread(() -> showLoading(prbEditor, false));
+                runOnUiThread(() -> handleCropCancelOrError("Lỗi khởi tạo: " + e.getMessage()));
             }
         });
     }
 
-    private void applyCropResultToPhotoEditor(Bitmap croppedBitmap) {
-        if (croppedBitmap == null) return;
-        mBitmapBeforeDestructiveAction = mainBitmap;
-        mStateBeforeDestructiveAction = captureCurrentState();
+    private void launchUCrop(Uri sourceUri, Uri destUri) {
+        UCrop.Options options = new UCrop.Options();
+        options.setCompressionFormat(Bitmap.CompressFormat.PNG);
+        options.setFreeStyleCropEnabled(true);
+        Intent uIntent = UCrop.of(sourceUri, destUri)
+                .withOptions(options)
+                .getIntent(BasicEditorActivity.this);
+        uIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        cropResultLauncher.launch(uIntent);
+        showLoading(prbEditor, false);
+    }
 
-        mTextManager.clearAllViews();
+    private void handleCropCancelOrError(String errorMsg) {
+        showLoading(prbEditor, false);
+        deleteTempFilesIfAny();
 
-        this.mainBitmap = croppedBitmap;
-        photoEdtView.getSource().setImageBitmap(mainBitmap);
-        mFilterManager.setImage(mainBitmap);
-        mFilterManager.resetStateAfterDestructiveEdit();
+        photoEdtView.getSource().setAlpha(0f);
 
-        isImageCroppedAndBaked = true;
-
-        setGpuMode(true);
-        mHistoryManager.clear();
-        updateUndoRedoUI();
-        showToast("Đã cắt ảnh!");
+        if (errorMsg != null) {
+            showToast(errorMsg);
+        }
     }
 
     private void openFragment(Fragment fragment) {
@@ -498,22 +460,6 @@ public class BasicEditorActivity extends BaseActivity implements
         if (onBackPressedCallback != null) onBackPressedCallback.setEnabled(false);
     }
 
-    private Bitmap loadBitmapFromUri(Uri uri) throws Exception {
-        if (uri == null) return null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            ImageDecoder.Source src = ImageDecoder.createSource(getContentResolver(), uri);
-            return ImageDecoder.decodeBitmap(src, (decoder, info, source) -> {
-                decoder.setAllocator(ImageDecoder.ALLOCATOR_SOFTWARE);
-                decoder.setMutableRequired(true);
-            });
-        } else {
-            try (InputStream is = getContentResolver().openInputStream(uri)) {
-                Bitmap bmp = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
-                return bmp.copy(Bitmap.Config.ARGB_8888, true);
-            }
-        }
-    }
-
     private void safeRecycleBitmap(Bitmap bmp) {
         if (bmp != null && !bmp.isRecycled()) {
             try { bmp.recycle(); } catch (Exception ignored) {}
@@ -523,8 +469,6 @@ public class BasicEditorActivity extends BaseActivity implements
     private void deleteTempFilesIfAny() {
         AppExecutors.getInstance().diskIO().execute(() -> {
             try {
-                if (lastTempSourceFile != null && lastTempSourceFile.exists()) lastTempSourceFile.delete();
-                if (lastTempDestFile != null && lastTempDestFile.exists()) lastTempDestFile.delete();
                 File cacheDir = getCacheDir();
                 File[] files = cacheDir.listFiles((dir, name) -> name.startsWith("temp_crop_"));
                 if (files != null) {
@@ -537,6 +481,8 @@ public class BasicEditorActivity extends BaseActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (mFilterManager != null) mFilterManager.release();
+        if (mTextManager != null) mTextManager.release();
         safeRecycleBitmap(mainBitmap);
         safeRecycleBitmap(mBitmapBeforeDestructiveAction);
         deleteTempFilesIfAny();

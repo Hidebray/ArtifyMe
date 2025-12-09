@@ -11,9 +11,8 @@ import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilterGroup;
 
 public class FilterEditorManager {
-    private final GPUImageView mGpuImageView;
+    private GPUImageView mGpuImageView;
     private final AdjustEditorManager mAdjustManager;
-
     private GPUImageFilter mColorFilter;
     private int mCurrentFilterIndex = 0;
     private int mSavedFilterIndex = 0;
@@ -23,19 +22,20 @@ public class FilterEditorManager {
         this.mGpuImageView = gpuImageView;
         mAdjustManager = new AdjustEditorManager(gpuImageView);
         mColorFilter = new GPUImageFilter();
-
         updateFilterGroup();
     }
 
     private void updateFilterGroup() {
-        // Tạo Group mới để tránh lỗi Threading
+        if (mGpuImageView == null) return;
         GPUImageFilterGroup newFilterGroup = new GPUImageFilterGroup();
         newFilterGroup.addFilter(mColorFilter);
         newFilterGroup.addFilter(mAdjustManager.getAdjustFilterGroup());
         mGpuImageView.setFilter(newFilterGroup);
     }
 
-    public void setImage(Bitmap bitmap) { mGpuImageView.setImage(bitmap); }
+    public void setImage(Bitmap bitmap) {
+        if (mGpuImageView != null) mGpuImageView.setImage(bitmap);
+    }
     public void setFilterIndex(int index) { this.mCurrentFilterIndex = index; }
     public int getFilterIndex() { return mCurrentFilterIndex; }
 
@@ -55,17 +55,19 @@ public class FilterEditorManager {
     public void applyFilter(GPUImageFilter filter) {
         this.mColorFilter = filter;
         updateFilterGroup();
-        mGpuImageView.requestRender();
+        if (mGpuImageView != null) mGpuImageView.requestRender();
     }
 
-    public Bitmap capture() throws InterruptedException { return mGpuImageView.capture(); }
+    public Bitmap capture() throws InterruptedException {
+        return mGpuImageView != null ? mGpuImageView.capture() : null;
+    }
 
     public void resetAll() {
         mCurrentFilterIndex = 0;
         mColorFilter = new GPUImageFilter();
         mAdjustManager.reset();
         updateFilterGroup();
-        mGpuImageView.requestRender();
+        if (mGpuImageView != null) mGpuImageView.requestRender();
     }
 
     public void resetStateAfterDestructiveEdit() {
@@ -83,23 +85,19 @@ public class FilterEditorManager {
     public Bitmap getBitmapWithFiltersApplied(Context context, Bitmap sourceBitmap) {
         if (sourceBitmap == null) return null;
         try {
-            // 1. Tạo AdjustManager ảo (null view)
             AdjustEditorManager tempAdjustManager = new AdjustEditorManager(null);
             tempAdjustManager.applySettings(mAdjustManager.getAllSettings());
 
-            // 2. Lấy Filter màu hiện tại
             GPUImageFilter tempColorFilter = new GPUImageFilter();
             List<FilterAdapter.FilterModel> filters = FilterGenerator.getFilters();
             if (mCurrentFilterIndex >= 0 && mCurrentFilterIndex < filters.size()) {
                 tempColorFilter = filters.get(mCurrentFilterIndex).filter;
             }
 
-            // 3. Gom nhóm
             GPUImageFilterGroup exportGroup = new GPUImageFilterGroup();
             exportGroup.addFilter(tempColorFilter);
             exportGroup.addFilter(tempAdjustManager.getAdjustFilterGroup());
 
-            // 4. Render ngầm
             GPUImage renderer = new GPUImage(context);
             renderer.setImage(sourceBitmap);
             renderer.setFilter(exportGroup);
@@ -108,7 +106,11 @@ public class FilterEditorManager {
         } catch (OutOfMemoryError e) {
             e.printStackTrace();
             System.gc();
-            return sourceBitmap; // Fallback nếu tràn bộ nhớ
+            return sourceBitmap;
         }
+    }
+
+    public void release() {
+        mGpuImageView = null;
     }
 }
