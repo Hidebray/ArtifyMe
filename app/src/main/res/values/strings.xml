@@ -34,6 +34,7 @@
     <string name="tool_adjust">Điều chỉnh</string>
     <string name="tool_filter">Bộ lọc</string>
     <string name="tool_text">Chữ</string>
+    <string name="tool_remove_bg">Xóa nền</string>
 
     <string name="adjust_title">Điều chỉnh</string>
     <string name="adj_brightness">Độ sáng</string>

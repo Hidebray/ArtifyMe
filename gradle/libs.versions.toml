@@ -14,7 +14,10 @@ photoeditor = "3.0.2"
 photoEditorVersion = "2.0.0-beta1"
 recyclerview = "1.4.0"
 roomRuntime = "2.8.3"
+segmentationSelfie = "16.0.0-beta6"
+segmentationSelfieVersion = "16.0.0"
 ucrop = "2.2.11"
+visionCommon = "17.3.0"
 
 [libraries]
 cardview = { module = "androidx.cardview:cardview", version.ref = "cardview" }
@@ -32,7 +35,10 @@ recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "r
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
+segmentation-selfie = { module = "com.google.mlkit:segmentation-selfie", version.ref = "segmentationSelfie" }
+segmentation-selfie-v1600 = { module = "com.google.mlkit:segmentation-selfie", version.ref = "segmentationSelfieVersion" }
 ucrop = { module = "com.github.yalantis:ucrop", version.ref = "ucrop" }
+vision-common = { group = "com.google.mlkit", name = "vision-common", version.ref = "visionCommon" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
