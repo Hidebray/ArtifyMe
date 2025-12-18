@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -26,7 +27,8 @@ import com.sevengroup.artifyme.fragments.editor.TextFragment;
 import com.sevengroup.artifyme.managers.AdjustEditorManager;
 import com.sevengroup.artifyme.managers.FilterEditorManager;
 import com.sevengroup.artifyme.managers.HistoryManager;
-import com.sevengroup.artifyme.managers.RemoveBgManager;
+import com.sevengroup.artifyme.managers.RemoveBgApiManager;
+import com.sevengroup.artifyme.managers.RemoveBgLocalManager;
 import com.sevengroup.artifyme.managers.TextEditorManager;
 import com.sevengroup.artifyme.models.EditorState;
 import com.sevengroup.artifyme.models.EditorToolType;
@@ -62,7 +64,8 @@ public class BasicEditorActivity extends BaseActivity implements
     private TextEditorManager mTextManager;
     private FilterEditorManager mFilterManager;
     private AdjustEditorManager mAdjustManager;
-    private RemoveBgManager mRemoveBgManager;
+    private RemoveBgLocalManager mRemoveBgLocalManager;
+    private RemoveBgApiManager mRemoveBgApiManager;
     private final HistoryManager mHistoryManager = new HistoryManager();
     private EditorState mStateBeforeEdit;
     private Bitmap mBitmapBeforeDestructiveAction;
@@ -105,7 +108,9 @@ public class BasicEditorActivity extends BaseActivity implements
         mTextManager = new TextEditorManager(photoEdtView);
         mFilterManager = new FilterEditorManager(gpuImgView);
         mAdjustManager = mFilterManager.getAdjustManager();
-        mRemoveBgManager = new RemoveBgManager();
+        mRemoveBgLocalManager = new RemoveBgLocalManager();
+        mRemoveBgApiManager = new RemoveBgApiManager();
+
 
         setupViewModel();
         setupToolsRecyclerView();
@@ -310,9 +315,12 @@ public class BasicEditorActivity extends BaseActivity implements
                 photoEdtView.setVisibility(View.VISIBLE);
                 openFragment(TextFragment.newInstance());
                 break;
-            case BG_REMOVE:
-                // Todo: add removeBgManager
-                removeBackground();
+            case BG_REMOVE_LOCAL:
+                removeBackgroundLocal();
+                break;
+            case BG_REMOVE_API:
+                // Todo: call api remove bg
+                removeBackgroundApi();
                 break;
         }
     }
@@ -434,7 +442,7 @@ public class BasicEditorActivity extends BaseActivity implements
         });
     }
 
-    private void removeBackground() {
+    private void removeBackgroundLocal() {
         showLoading(prbEditor, true);
 
         AppExecutors.getInstance().computation().execute(() -> {
@@ -449,13 +457,13 @@ public class BasicEditorActivity extends BaseActivity implements
                 runOnUiThread(() -> {
                     if (isFinishing() || isDestroyed()) return;
 
-                    // Lưu state để undo
+
                     mBitmapBeforeDestructiveAction = mainBitmap;
                     mStateBeforeDestructiveAction = captureCurrentState();
                     mTextManager.clearAllViews();
 
-                    // 2. Gọi AI remove background
-                    mRemoveBgManager.removeBackground(finalSourceBitmap, resultBitmap -> {
+
+                    mRemoveBgLocalManager.removeBackground(finalSourceBitmap, resultBitmap -> {
                         runOnUiThread(() -> {
                             if (isFinishing() || isDestroyed()) return;
 
@@ -470,6 +478,44 @@ public class BasicEditorActivity extends BaseActivity implements
             }
         });
     }
+
+    private void removeBackgroundApi() {
+        showLoading(prbEditor, true);
+
+        AppExecutors.getInstance().computation().execute(() -> {
+            try {
+                Bitmap sourceBitmap =
+                        mFilterManager.getBitmapWithFiltersApplied(this, mainBitmap);
+
+                if (sourceBitmap == null) sourceBitmap = mainBitmap;
+
+                Bitmap finalSource = sourceBitmap;
+
+                runOnUiThread(() -> {
+                    // backup để undo
+                    mBitmapBeforeDestructiveAction = mainBitmap;
+                    mStateBeforeDestructiveAction = captureCurrentState();
+                    mTextManager.clearAllViews();
+
+                    mRemoveBgApiManager.removeBackground(
+                            finalSource,
+                            resultBitmap -> runOnUiThread(() -> {
+                                applyRemoveBgResult(resultBitmap);
+                            }),
+                            error -> runOnUiThread(() -> {
+                                showLoading(prbEditor, false);
+                                showToast("Remove.bg lỗi: " + error);
+                                Log.d("removeBgApi", error);
+                            })
+                    );
+                });
+
+            } catch (Exception e) {
+                runOnUiThread(() -> showLoading(prbEditor, false));
+            }
+        });
+    }
+
 
     private void applyRemoveBgResult(Bitmap resultBitmap) {
         if (resultBitmap == null) {
@@ -494,7 +540,6 @@ public class BasicEditorActivity extends BaseActivity implements
         showLoading(prbEditor, false);
         showToast("Đã xóa nền ảnh");
     }
-
 
     private void launchUCrop(Uri sourceUri, Uri destUri) {
         UCrop.Options options = new UCrop.Options();

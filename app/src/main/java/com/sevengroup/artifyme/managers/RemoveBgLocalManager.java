@@ -16,11 +16,11 @@ import com.google.mlkit.vision.segmentation.selfie.SelfieSegmenterOptions;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
-public class RemoveBgManager {
+public class RemoveBgLocalManager {
 
     Segmenter segmenter ;
 
-    public RemoveBgManager() {
+    public RemoveBgLocalManager() {
         SelfieSegmenterOptions options =
                 new SelfieSegmenterOptions.Builder()
                         .setDetectorMode(SelfieSegmenterOptions.SINGLE_IMAGE_MODE)
