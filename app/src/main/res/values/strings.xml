@@ -36,6 +36,7 @@
     <string name="tool_text">Chữ</string>
     <string name="tool_remove_bg_local">Xóa nền (Local)</string>
     <string name="tool_remove_bg_api">Xóa nền (Api)</string>
+    <string name="tool_ai_edit">AI</string>
 
     <string name="adjust_title">Điều chỉnh</string>
     <string name="adj_brightness">Độ sáng</string>
@@ -76,4 +77,29 @@
     <string name="msg_no_share_app">Không tìm thấy ứng dụng chia sẻ</string>
     <string name="msg_image_not_found">Không tìm thấy ảnh</string>
     <string name="msg_share_error">Không thể chia sẻ: %s</string>
+
+    <string name="action_ai_edit">AI Edit</string>
+    <string name="dialog_ai_title">AI nền</string>
+    <string name="dialog_ai_message">Tạo nền AI</string>
+    <string name="dialog_ai_processing">Đang xử lí…</string>
+    <string name="msg_ai_success">AI background tạo xong.</string>
+    <string name="msg_ai_error">Lỗi: %s</string>
+    <string name="msg_ai_no_image">Không thể tải ảnh</string>
+    <string name="msg_ai_save_failed">Không thể lưu ảnh</string>
+    <string name="msg_enter_prompt">Vui lòng nhập mô tả</string>
+    <string name="msg_ai_processing_error">Lỗi xử lý AI: %s</string>
+    <string name="msg_ai_network_error">Lỗi kết nối mạng. Kiểm tra internet.</string>
+
+    <string name="ai_editor_title">AI Chỉnh sửa</string>
+    <string name="ai_tool_background">Nền AI</string>
+
+    <string name="ai_bg_dialog_title">Tạo nền AI</string>
+    <string name="ai_bg_dialog_message">Mô tả nền bạn muốn tạo</string>
+    <string name="ai_bg_hint">VD: bãi biển hoàng hôn, núi tuyết, thành phố ban đêm</string>
+    <string name="ai_bg_processing">Đang tạo nền AI… Vui lòng đợi</string>
+    <string name="ai_bg_translating">Đang dịch mô tả…</string>
+
+    <string name="ai_preview_title">Xem trước kết quả</string>
+    <string name="btn_apply_save">Áp dụng &amp; Lưu</string>
+    <string name="msg_ai_applying">Đang lưu kết quả…</string>
 </resources>
