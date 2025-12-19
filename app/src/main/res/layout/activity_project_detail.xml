@@ -117,6 +117,35 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/btnAiEdit"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingVertical="8dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_ai_edit"
+                    app:tint="@color/text_primary"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/tool_ai_edit"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="sans-serif-medium"/>
+
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/btnEdit"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -161,7 +190,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:src="@drawable/delete_24px"
-                    android:textColor="@color/text_primary"/>
+                    app:tint="@color/text_primary"/>
 
                 <TextView
                     android:layout_width="wrap_content"

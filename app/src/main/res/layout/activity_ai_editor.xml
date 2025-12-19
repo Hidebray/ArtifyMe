@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_app">
+
+    <RelativeLayout
+        android:id="@+id/layoutHeader"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/bg_toolbar"
+        android:elevation="4dp"
+        android:paddingHorizontal="8dp">
+
+        <ImageButton
+            android:id="@+id/btnClose"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_centerVertical="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/close_24px"
+            app:tint="@color/text_primary"
+            android:contentDescription="@string/btn_cancel"/>
+
+        <TextView
+            android:id="@+id/txtTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="@string/ai_editor_title"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+    </RelativeLayout>
+
+    <FrameLayout
+        android:id="@+id/frameImageContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/bg_app">
+
+        <ImageView
+            android:id="@+id/imgOriginal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"/>
+
+        <include
+            android:id="@+id/layoutPreview"
+            layout="@layout/layout_ai_preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"/>
+
+        <FrameLayout
+            android:id="@+id/layoutLoadingOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#E6000000"
+            android:visibility="gone"
+            android:clickable="true"
+            android:focusable="true"
+            tools:visibility="visible">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                app:cardBackgroundColor="#DD000000"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="16dp"
+                android:padding="32dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="32dp">
+
+                    <ProgressBar
+                        android:id="@+id/prbProcessing"
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
+                        android:indeterminateTint="@color/brand_primary"
+                        android:indeterminateDrawable="@drawable/custom_progress_circle"/>
+
+                    <TextView
+                        android:id="@+id/txtProcessingStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/ai_bg_processing"
+                        android:textColor="@color/white"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="24dp"
+                        android:gravity="center"
+                        android:maxWidth="240dp"/>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+        </FrameLayout>
+
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/layoutFooter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="24dp">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginHorizontal="24dp"
+            app:cardBackgroundColor="@color/bg_toolbar"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="8dp"
+            app:strokeColor="#1A000000"
+            app:strokeWidth="1dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rcvAiTools"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="72dp"
+                android:orientation="horizontal"
+                android:paddingHorizontal="8dp"
+                tools:itemCount="1"
+                tools:listitem="@layout/item_ai_tool" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+    </FrameLayout>
+
+</LinearLayout>

@@ -2,16 +2,13 @@ package com.sevengroup.artifyme.models;
 
 import com.sevengroup.artifyme.R;
 
-public enum EditorToolType {
-    CROP(R.string.tool_crop, R.drawable.crop_24px),
-    ADJUST(R.string.tool_adjust, R.drawable.adjust_24px),
-    FILTER(R.string.tool_filter, R.drawable.filter_24px),
-    TEXT(R.string.tool_text, R.drawable.title_24px);
+public enum AiToolType {
+    AI_BACKGROUND(R.string.ai_tool_background, R.drawable.ic_ai_background);
 
     private final int nameResId;
     private final int iconResId;
 
-    EditorToolType(int nameResId, int iconResId) {
+    AiToolType(int nameResId, int iconResId) {
         this.nameResId = nameResId;
         this.iconResId = iconResId;
     }

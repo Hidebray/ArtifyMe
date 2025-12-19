@@ -26,7 +26,6 @@ import com.sevengroup.artifyme.fragments.editor.TextFragment;
 import com.sevengroup.artifyme.managers.AdjustEditorManager;
 import com.sevengroup.artifyme.managers.FilterEditorManager;
 import com.sevengroup.artifyme.managers.HistoryManager;
-import com.sevengroup.artifyme.managers.RemoveBgManager;
 import com.sevengroup.artifyme.managers.TextEditorManager;
 import com.sevengroup.artifyme.models.EditorState;
 import com.sevengroup.artifyme.models.EditorToolType;
@@ -62,7 +61,6 @@ public class BasicEditorActivity extends BaseActivity implements
     private TextEditorManager mTextManager;
     private FilterEditorManager mFilterManager;
     private AdjustEditorManager mAdjustManager;
-    private RemoveBgManager mRemoveBgManager;
     private final HistoryManager mHistoryManager = new HistoryManager();
     private EditorState mStateBeforeEdit;
     private Bitmap mBitmapBeforeDestructiveAction;
@@ -79,7 +77,6 @@ public class BasicEditorActivity extends BaseActivity implements
                 if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                     final Uri resultUri = UCrop.getOutput(result.getData());
                     if (resultUri != null) {
-                        // Thành công -> Xử lý ảnh
                         viewModel.processCroppedImage(resultUri);
                     } else {
                         handleCropCancelOrError("Lỗi: Không tìm thấy ảnh cắt.");
@@ -105,7 +102,6 @@ public class BasicEditorActivity extends BaseActivity implements
         mTextManager = new TextEditorManager(photoEdtView);
         mFilterManager = new FilterEditorManager(gpuImgView);
         mAdjustManager = mFilterManager.getAdjustManager();
-        mRemoveBgManager = new RemoveBgManager();
 
         setupViewModel();
         setupToolsRecyclerView();
@@ -263,7 +259,7 @@ public class BasicEditorActivity extends BaseActivity implements
                     photoEdtView.getSource().setImageBitmap(finalBmp);
                     photoEdtView.getSource().setAlpha(1f);
                     mTextManager.saveImage(savedBitmap -> viewModel.saveEditedImage(currentProjectId, savedBitmap));
-                    });
+                });
             } catch (Exception e) {
                 e.printStackTrace();
                 runOnUiThread(() -> {
@@ -309,10 +305,6 @@ public class BasicEditorActivity extends BaseActivity implements
                 setGpuMode(true);
                 photoEdtView.setVisibility(View.VISIBLE);
                 openFragment(TextFragment.newInstance());
-                break;
-            case BG_REMOVE:
-                // Todo: add removeBgManager
-                removeBackground();
                 break;
         }
     }
@@ -384,36 +376,57 @@ public class BasicEditorActivity extends BaseActivity implements
         mFilterManager.saveCurrentState();
     }
 
-    @Override public void onAdjustmentChanged(AdjustFragment.AdjustType type, float value) {
+    // ============== Listener Implementations ==============
+
+    @Override
+    public void onAdjustmentChanged(AdjustFragment.AdjustType type, float value) {
         mAdjustManager.adjust(type, value);
     }
-    @Override public void onAdjustApplied() {
+
+    @Override
+    public void onAdjustApplied() {
         saveSnapshotToHistory();
         mAdjustManager.saveCurrentState();
         closeFragment();
     }
-    @Override public void onAdjustCancelled() {
+
+    @Override
+    public void onAdjustCancelled() {
         mAdjustManager.restoreState();
         closeFragment();
     }
-    @Override public void onTextApplied(String text, int colorCode) {
+
+    @Override
+    public void onTextApplied(String text, int colorCode) {
         mTextManager.addText(text, colorCode);
         closeFragment();
     }
-    @Override public void onTextCancelled() { closeFragment(); }
-    @Override public void onFilterSelected(GPUImageFilter filter, int index) {
+
+    @Override
+    public void onTextCancelled() {
+        closeFragment();
+    }
+
+    @Override
+    public void onFilterSelected(GPUImageFilter filter, int index) {
         mFilterManager.setFilterIndex(index);
         mFilterManager.applyFilter(filter);
     }
-    @Override public void onFilterApplied() {
+
+    @Override
+    public void onFilterApplied() {
         saveSnapshotToHistory();
         mFilterManager.saveCurrentState();
         closeFragment();
     }
-    @Override public void onFilterCancelled() {
+
+    @Override
+    public void onFilterCancelled() {
         mFilterManager.restoreState();
         closeFragment();
     }
+
+    // ============== Crop Related Methods ==============
 
     private void startCrop() {
         showLoading(prbEditor, true);
@@ -434,68 +447,6 @@ public class BasicEditorActivity extends BaseActivity implements
         });
     }
 
-    private void removeBackground() {
-        showLoading(prbEditor, true);
-
-        AppExecutors.getInstance().computation().execute(() -> {
-            try {
-                Bitmap sourceBitmap = mFilterManager
-                        .getBitmapWithFiltersApplied(this, mainBitmap);
-
-                if (sourceBitmap == null) sourceBitmap = mainBitmap;
-
-                Bitmap finalSourceBitmap = sourceBitmap;
-
-                runOnUiThread(() -> {
-                    if (isFinishing() || isDestroyed()) return;
-
-                    // Lưu state để undo
-                    mBitmapBeforeDestructiveAction = mainBitmap;
-                    mStateBeforeDestructiveAction = captureCurrentState();
-                    mTextManager.clearAllViews();
-
-                    // 2. Gọi AI remove background
-                    mRemoveBgManager.removeBackground(finalSourceBitmap, resultBitmap -> {
-                        runOnUiThread(() -> {
-                            if (isFinishing() || isDestroyed()) return;
-
-                            applyRemoveBgResult(resultBitmap);
-                        });
-                    });
-                });
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                runOnUiThread(() -> showLoading(prbEditor, false));
-            }
-        });
-    }
-
-    private void applyRemoveBgResult(Bitmap resultBitmap) {
-        if (resultBitmap == null) {
-            showLoading(prbEditor, false);
-            showToast("Xóa nền thất bại");
-            return;
-        }
-
-        safeRecycleBitmap(mainBitmap);
-        mainBitmap = resultBitmap;
-
-        photoEdtView.getSource().setImageBitmap(mainBitmap);
-        mFilterManager.setImage(mainBitmap);
-        mFilterManager.resetStateAfterDestructiveEdit();
-
-        isImageCroppedAndBaked = true;
-        setGpuMode(true);
-
-        mHistoryManager.clear();
-        updateUndoRedoUI();
-
-        showLoading(prbEditor, false);
-        showToast("Đã xóa nền ảnh");
-    }
-
-
     private void launchUCrop(Uri sourceUri, Uri destUri) {
         UCrop.Options options = new UCrop.Options();
         options.setCompressionFormat(Bitmap.CompressFormat.PNG);
@@ -511,13 +462,13 @@ public class BasicEditorActivity extends BaseActivity implements
     private void handleCropCancelOrError(String errorMsg) {
         showLoading(prbEditor, false);
         deleteTempFilesIfAny();
-
         photoEdtView.getSource().setAlpha(0f);
-
         if (errorMsg != null) {
             showToast(errorMsg);
         }
     }
+
+    // ============== Fragment Management ==============
 
     private void openFragment(Fragment fragment) {
         frameSubTool.setVisibility(View.VISIBLE);
@@ -534,9 +485,13 @@ public class BasicEditorActivity extends BaseActivity implements
         if (onBackPressedCallback != null) onBackPressedCallback.setEnabled(false);
     }
 
+    // ============== Utility Methods ==============
+
     private void safeRecycleBitmap(Bitmap bmp) {
         if (bmp != null && !bmp.isRecycled()) {
-            try { bmp.recycle(); } catch (Exception ignored) {}
+            try {
+                bmp.recycle();
+            } catch (Exception ignored) {}
         }
     }
 

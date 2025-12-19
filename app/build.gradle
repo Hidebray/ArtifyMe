@@ -14,6 +14,13 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField "String", "REMOVE_BG_API_KEY", "\"${project.findProperty('REMOVE_BG_API_KEY') ?: ''}\""
+    }
+
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -48,12 +55,15 @@ dependencies {
 
     implementation libs.room.runtime
     implementation libs.vision.common
+    implementation libs.activity
+    implementation libs.constraintlayout
     annotationProcessor libs.room.compiler
 
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
 
-
+    implementation(libs.okhttp)
+    implementation libs.translate
 
 }

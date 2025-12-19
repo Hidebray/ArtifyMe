@@ -21,6 +21,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.sevengroup.artifyme.R;
 import com.sevengroup.artifyme.fragments.detail.InfoBottomSheetFragment;
 import com.sevengroup.artifyme.fragments.share.ShareBottomSheetFragment;
+import com.sevengroup.artifyme.managers.BackgroundEditorManager;
 import com.sevengroup.artifyme.utils.AppConstants;
 import com.sevengroup.artifyme.viewmodels.ProjectDetailViewModel;
 import java.io.File;
@@ -30,9 +31,11 @@ public class ProjectDetailActivity extends BaseActivity {
     private ImageButton btnBack, btnInfo;
     private TextView txtProjectName;
     private ProgressBar prbShare;
-    private LinearLayout btnShare, btnEdit, btnDelete;
+    private LinearLayout btnShare, btnAiEdit, btnEdit, btnDelete;
 
     private ProjectDetailViewModel viewModel;
+    private BackgroundEditorManager mBackgroundManager;
+
     private long currentProjectId;
     private String currentProjectName;
     private String latestImagePath;
@@ -64,6 +67,8 @@ public class ProjectDetailActivity extends BaseActivity {
         initViews();
 
         viewModel = new ViewModelProvider(this).get(ProjectDetailViewModel.class);
+        mBackgroundManager = new BackgroundEditorManager(this);
+
         observeViewModel();
         loadLatestImage();
     }
@@ -74,7 +79,9 @@ public class ProjectDetailActivity extends BaseActivity {
             if (data != null) {
                 currentProjectId = data.getLong(AppConstants.KEY_PROJECT_ID, -1L);
                 latestImagePath = data.getString(AppConstants.KEY_IMAGE_PATH);
-                currentProjectName = data.getString(AppConstants.KEY_PROJECT_NAME, getString(R.string.default_project_name));            }
+                currentProjectName = data.getString(AppConstants.KEY_PROJECT_NAME,
+                        getString(R.string.default_project_name));
+            }
         }
         if (currentProjectId == -1 || latestImagePath == null) {
             showToast(getString(R.string.msg_error_load_project));
@@ -90,6 +97,7 @@ public class ProjectDetailActivity extends BaseActivity {
         btnInfo = findViewById(R.id.btnInfo);
         txtProjectName = findViewById(R.id.txtProjectName);
         btnShare = findViewById(R.id.btnShare);
+        btnAiEdit = findViewById(R.id.btnAiEdit);
         btnEdit = findViewById(R.id.btnEdit);
         btnDelete = findViewById(R.id.btnDelete);
         prbShare = findViewById(R.id.prbShare);
@@ -100,6 +108,7 @@ public class ProjectDetailActivity extends BaseActivity {
 
         btnBack.setOnClickListener(v -> finish());
         btnInfo.setOnClickListener(v -> showHistoryBottomSheet());
+        btnAiEdit.setOnClickListener(v -> startAiEditor());
         btnEdit.setOnClickListener(v -> startBasicEditor());
         btnShare.setOnClickListener(v -> showShareBottomSheet());
         btnDelete.setOnClickListener(v -> confirmDelete());
@@ -132,12 +141,26 @@ public class ProjectDetailActivity extends BaseActivity {
     private void loadLatestImage() {
         File imageFile = new File(latestImagePath);
         if (imageFile.exists()) {
-            Glide.with(this).load(imageFile)
+            Glide.with(this)
+                    .load(imageFile)
                     .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .skipMemoryCache(true)
                     .fitCenter()
                     .into(imgProject);
         }
+    }
+
+    // ============================================================
+    // AI BACKGROUND FEATURE
+    // ============================================================
+
+    private void startAiEditor() {
+        Intent intent = new Intent(this, AiEditorActivity.class);
+        Bundle data = new Bundle();
+        data.putLong(AppConstants.KEY_PROJECT_ID, currentProjectId);
+        data.putString(AppConstants.KEY_IMAGE_PATH, latestImagePath);
+        intent.putExtras(data);
+        editorResultLauncher.launch(intent);
     }
 
     private void showHistoryBottomSheet() {
@@ -167,6 +190,7 @@ public class ProjectDetailActivity extends BaseActivity {
     private void startBasicEditor() {
         startBasicEditor(latestImagePath);
     }
+
     private void startBasicEditor(String imagePath) {
         Intent intent = new Intent(this, BasicEditorActivity.class);
         Bundle data = new Bundle();
@@ -183,5 +207,13 @@ public class ProjectDetailActivity extends BaseActivity {
                 .setPositiveButton(R.string.btn_delete, (d, w) -> viewModel.handleDeleteProject(currentProjectId))
                 .setNegativeButton(R.string.btn_cancel, null)
                 .show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mBackgroundManager != null) {
+            mBackgroundManager.release();
+        }
     }
 }
