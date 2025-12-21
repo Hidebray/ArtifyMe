@@ -36,7 +36,7 @@ public class BackgroundEditorManager {
     private final AppExecutors executors;
     private static final String REMOVE_BG_API_KEY = BuildConfig.REMOVE_BG_API_KEY;
 
-    private Translator translator;
+    private final Translator translator;
 
     public interface OnAiResultListener {
         void onSuccess(Bitmap result);
@@ -111,46 +111,43 @@ public class BackgroundEditorManager {
     private String translateToEnglish(String prompt) {
         String trimmed = prompt.trim();
 
-        // Check if already in English
-        if (trimmed.matches(".*[a-zA-Z].*") &&
-                !trimmed.matches(".*[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ].*")) {
-            return prompt;
+        boolean hasVietnameseChars = trimmed.matches(".*[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴĐ].*");
+
+        if (!hasVietnameseChars) {
+            return trimmed;
         }
 
         try {
             CountDownLatch latch = new CountDownLatch(1);
-            AtomicReference<String> resultRef = new AtomicReference<>(prompt);
+            AtomicReference<String> resultRef = new AtomicReference<>(null);
 
             translator.translate(trimmed)
                     .addOnSuccessListener(translatedText -> {
                         resultRef.set(translatedText);
                         latch.countDown();
                     })
-                    .addOnFailureListener(e -> {
-                        // Fallback to dictionary if ML Kit fails
-                        resultRef.set(translateWithDictionary(trimmed));
-                        latch.countDown();
-                    });
+                    .addOnFailureListener(e -> latch.countDown());
 
-            // Wait max 5 seconds for translation
-            latch.await(5, TimeUnit.SECONDS);
-            return resultRef.get();
+            boolean completed = latch.await(5, TimeUnit.SECONDS);
+
+            String mlResult = resultRef.get();
+
+            if (completed && mlResult != null && !mlResult.trim().isEmpty()) {
+                return mlResult;
+            }
+
+            return translateWithDictionary(trimmed);
 
         } catch (Exception e) {
-            // Fallback to dictionary
             return translateWithDictionary(trimmed);
         }
     }
 
-    /**
-     * Fallback: Dictionary-based translation
-     */
     private String translateWithDictionary(String prompt) {
         String lowerPrompt = prompt.toLowerCase().trim();
 
         Map<String, String> translations = new HashMap<>();
 
-        // Landscapes
         translations.put("bãi biển", "beach");
         translations.put("biển", "ocean");
         translations.put("núi", "mountain");
@@ -161,7 +158,6 @@ public class BackgroundEditorManager {
         translations.put("hồ", "lake");
         translations.put("sông", "river");
 
-        // Time of day
         translations.put("hoàng hôn", "sunset");
         translations.put("bình minh", "sunrise");
         translations.put("ban đêm", "night");
@@ -169,14 +165,12 @@ public class BackgroundEditorManager {
         translations.put("buổi sáng", "morning");
         translations.put("buổi chiều", "afternoon");
 
-        // Weather
         translations.put("tuyết", "snowy");
         translations.put("mưa", "rainy");
         translations.put("nắng", "sunny");
         translations.put("mây", "cloudy");
         translations.put("sương mù", "foggy");
 
-        // Colors
         translations.put("xanh", "blue");
         translations.put("đỏ", "red");
         translations.put("vàng", "yellow");
@@ -184,7 +178,6 @@ public class BackgroundEditorManager {
         translations.put("tím", "purple");
         translations.put("cam", "orange");
 
-        // Objects
         translations.put("cây dừa", "palm trees");
         translations.put("cây", "trees");
         translations.put("hoa", "flowers");
@@ -193,7 +186,6 @@ public class BackgroundEditorManager {
         translations.put("trăng", "moon");
         translations.put("mặt trời", "sun");
 
-        // Styles
         translations.put("nghệ thuật", "artistic");
         translations.put("trừu tượng", "abstract");
         translations.put("hiện đại", "modern");
@@ -210,14 +202,17 @@ public class BackgroundEditorManager {
     }
 
     private Bitmap removeBackground(Bitmap bitmap) throws Exception {
-        // Validate input bitmap
         if (bitmap == null || bitmap.getWidth() <= 0 || bitmap.getHeight() <= 0) {
             throw new IOException("Ảnh không hợp lệ");
         }
 
-        // Check if image is too distorted (basic check)
-        if (bitmap.getWidth() > 10000 || bitmap.getHeight() > 10000) {
-            throw new IOException("Ảnh quá lớn. Vui lòng sử dụng ảnh nhỏ hơn.");
+        if (bitmap.getWidth() > 8000 || bitmap.getHeight() > 8000) {
+            throw new IOException("Ảnh quá lớn (tối đa 8000x8000 pixels). Vui lòng resize ảnh trước.");
+        }
+
+        float aspectRatio = (float) bitmap.getWidth() / bitmap.getHeight();
+        if (aspectRatio > 10 || aspectRatio < 0.1) {
+            throw new IOException("Tỉ lệ ảnh không hợp lệ. Vui lòng sử dụng ảnh có tỉ lệ hợp lý.");
         }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -227,6 +222,10 @@ public class BackgroundEditorManager {
         baos.reset();
 
         Bitmap normalizedBitmap = BitmapFactory.decodeByteArray(jpegBytes, 0, jpegBytes.length);
+        if (normalizedBitmap == null) {
+            throw new IOException("Không thể xử lý ảnh. File có thể bị lỗi.");
+        }
+
         normalizedBitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
 
         RequestBody body = new MultipartBody.Builder()
@@ -247,47 +246,56 @@ public class BackgroundEditorManager {
         OkHttpClient client = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(60, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
                 .build();
 
-        Response response = client.newCall(request).execute();
+        try (Response response = client.newCall(request).execute()) {
 
-        if (!response.isSuccessful()) {
-            String errorBody = "";
-            try {
-                if (response.body() != null) {
-                    errorBody = response.body().string();
+            if (!response.isSuccessful()) {
+                String errorBody = "";
+                try {
+                    if (response.body() != null) {
+                        errorBody = response.body().string();
+                    }
+                } catch (Exception ignored) {
                 }
-            } catch (Exception ignored) {}
 
-            // Handle specific error codes
-            switch (response.code()) {
-                case 400:
-                    // Bad request
-                    throw new IOException("Ảnh bị lỗi hoặc quá méo mó. Hãy thử với ảnh khác hoặc bỏ bớt hiệu ứng.");
-                case 402:
-                    throw new IOException("Hết credit API. Vui lòng nạp thêm tại remove.bg");
-                case 403:
-                    throw new IOException("API key không hợp lệ");
-                case 429:
-                    throw new IOException("Quá nhiều yêu cầu. Vui lòng đợi 1 phút.");
-                default:
-                    throw new IOException("Lỗi xóa nền (code " + response.code() + "): " + errorBody);
+                // error code
+                switch (response.code()) {
+                    case 400:
+                        if (errorBody.contains("image_file")) {
+                            throw new IOException("File ảnh bị lỗi. Hãy chọn ảnh khác.");
+                        }
+                        throw new IOException("Ảnh không hợp lệ. Thử giảm hiệu ứng hoặc dùng ảnh khác.");
+                    case 402:
+                        throw new IOException("Hết credit API. Liên hệ admin để nạp thêm.");
+                    case 403:
+                        throw new IOException("API key không hợp lệ. Vui lòng cập nhật app.");
+                    case 429:
+                        throw new IOException("Quá nhiều yêu cầu. Vui lòng đợi 1 phút rồi thử lại.");
+                    case 500:
+                    case 502:
+                    case 503:
+                        throw new IOException("Server remove.bg đang bận. Vui lòng thử lại sau.");
+                    default:
+                        throw new IOException("Lỗi xóa nền (code " + response.code() + ")");
+                }
+            }
+
+            byte[] bytes = response.body().bytes();
+            Bitmap result = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+
+            if (result == null) {
+                throw new IOException("Không thể xử lý ảnh trả về. Thử lại sau.");
+            }
+
+            return result;
+
+        } finally {
+            if (normalizedBitmap != bitmap && normalizedBitmap != null && !normalizedBitmap.isRecycled()) {
+                normalizedBitmap.recycle();
             }
         }
-
-        byte[] bytes = response.body().bytes();
-        Bitmap result = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-
-        // Clean up
-        if (normalizedBitmap != bitmap && !normalizedBitmap.isRecycled()) {
-            normalizedBitmap.recycle();
-        }
-
-        if (result == null) {
-            throw new IOException("Không thể xử lý ảnh. Hãy thử với ảnh khác.");
-        }
-
-        return result;
     }
 
     private Bitmap generateBackgroundPollinations(String prompt, int w, int h) throws Exception {
@@ -324,19 +332,11 @@ public class BackgroundEditorManager {
         return Bitmap.createScaledBitmap(bg, w, h, true);
     }
 
-    /**
-     * Merge foreground and background
-     */
     private Bitmap mergeWithGpuImage(Bitmap foreground, Bitmap background) {
-        // Skip GPUImage entirely - it causes transparency issues
         return mergeWithCanvas(foreground, background);
     }
 
-    /**
-     * Canvas-based merge with proper alpha compositing
-     */
     private Bitmap mergeWithCanvas(Bitmap foreground, Bitmap background) {
-        // Ensure both bitmaps are same size
         Bitmap scaledForeground = foreground;
         if (foreground.getWidth() != background.getWidth() ||
                 foreground.getHeight() != background.getHeight()) {

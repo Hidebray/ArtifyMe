@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="#CC000000">
 
-    <!-- Result Image -->
     <ImageView
         android:id="@+id/imgAiResult"
         android:layout_width="0dp"
@@ -18,7 +17,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="16dp"/>
 
-    <!-- Buttons -->
     <LinearLayout
         android:id="@+id/layoutButtons"
         android:layout_width="0dp"

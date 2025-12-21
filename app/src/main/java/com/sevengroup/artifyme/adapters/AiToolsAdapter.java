@@ -29,7 +29,7 @@ public class AiToolsAdapter extends RecyclerView.Adapter<AiToolsAdapter.AiToolVi
     @Override
     public AiToolViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_ai_tool, parent, false);
+                .inflate(R.layout.item_editor_tool, parent, false);
         return new AiToolViewHolder(view);
     }
 

@@ -136,7 +136,7 @@
                 android:orientation="horizontal"
                 android:paddingHorizontal="8dp"
                 tools:itemCount="1"
-                tools:listitem="@layout/item_ai_tool" />
+                tools:listitem="@layout/item_editor_tool" />
 
         </com.google.android.material.card.MaterialCardView>
 
