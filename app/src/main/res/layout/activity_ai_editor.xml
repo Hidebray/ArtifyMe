@@ -111,22 +111,28 @@
 
     </FrameLayout>
 
-    <FrameLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layoutFooter"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingBottom="24dp">
+        android:paddingBottom="24dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toBottomOf="parent">
 
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardTools"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
             android:layout_marginHorizontal="24dp"
             app:cardBackgroundColor="@color/bg_toolbar"
             app:cardCornerRadius="24dp"
             app:cardElevation="8dp"
             app:strokeColor="#1A000000"
-            app:strokeWidth="1dp">
+            app:strokeWidth="1dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rcvAiTools"
@@ -134,12 +140,14 @@
                 android:layout_height="wrap_content"
                 android:minHeight="72dp"
                 android:orientation="horizontal"
+                android:clipToPadding="false"
                 android:paddingHorizontal="8dp"
-                tools:itemCount="1"
-                tools:listitem="@layout/item_editor_tool" />
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_editor_tool"
+                tools:itemCount="5" />
 
         </com.google.android.material.card.MaterialCardView>
 
-    </FrameLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </LinearLayout>

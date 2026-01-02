@@ -21,6 +21,7 @@ import com.google.android.material.button.MaterialButton;
 import com.sevengroup.artifyme.R;
 import com.sevengroup.artifyme.adapters.AiToolsAdapter;
 import com.sevengroup.artifyme.managers.BackgroundEditorManager;
+import com.sevengroup.artifyme.managers.CartoonManager;
 import com.sevengroup.artifyme.models.AiToolType;
 import com.sevengroup.artifyme.repositories.ProjectRepository;
 import com.sevengroup.artifyme.utils.AppConstants;
@@ -47,6 +48,7 @@ public class AiEditorActivity extends BaseActivity implements
     private Bitmap originalBitmap;
     private Bitmap aiResultBitmap;
     private BackgroundEditorManager mBackgroundManager;
+    private CartoonManager mCartoonManager;
     private final List<AiToolType> aiToolList = Arrays.asList(AiToolType.values());
 
     @Override
@@ -61,6 +63,7 @@ public class AiEditorActivity extends BaseActivity implements
         loadImage();
 
         mBackgroundManager = new BackgroundEditorManager(this);
+        mCartoonManager = new CartoonManager(this);
     }
 
     private boolean loadIntentData() {
@@ -121,6 +124,11 @@ public class AiEditorActivity extends BaseActivity implements
         switch (toolType) {
             case AI_BACKGROUND:
                 showAiBackgroundDialog();
+                break;
+            case AI_CARTOONIZE:
+                showAiCartoonDialog();
+                break;
+            default:
                 break;
         }
     }
@@ -186,6 +194,70 @@ public class AiEditorActivity extends BaseActivity implements
                     }
                 }
         );
+    }
+
+    // --- CODE MỚI CHO CARTOON ---
+
+    private void showAiCartoonDialog() {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_ai_prompt, null);
+        EditText edtPrompt = dialogView.findViewById(R.id.edtPrompt);
+
+        // Đổi hint để người dùng biết nên nhập gì
+        edtPrompt.setHint("VD: Chàng trai đeo kính, áo vest xanh...");
+
+        new AlertDialog.Builder(this)
+                .setTitle("Tạo nhân vật Hoạt hình")
+                .setView(dialogView)
+                .setMessage("Nhập mô tả chi tiết về nhân vật bạn muốn vẽ. AI sẽ tạo ra một bức tranh 3D Disney/Pixar cực đẹp dựa trên mô tả đó.")
+                .setPositiveButton("Vẽ ngay", (dialog, which) -> {
+                    String prompt = edtPrompt.getText().toString().trim();
+                    if (!TextUtils.isEmpty(prompt)) {
+                        processAiCartoon(prompt);
+                    } else {
+                        showToast(getString(R.string.msg_enter_prompt));
+                    }
+                })
+                .setNegativeButton(R.string.btn_cancel, null)
+                .show();
+    }
+
+    private void processAiCartoon(String prompt) {
+        // Show loading
+        showLoading(true, "Đang vẽ tranh hoạt hình...");
+
+        // Lấy kích thước ảnh gốc để tạo ảnh mới cùng tỉ lệ
+        int w = 1024; // Mặc định hoặc lấy imgOriginal.getWidth();
+        int h = 1024;
+        if (originalBitmap != null) {
+            w = originalBitmap.getWidth();
+            h = originalBitmap.getHeight();
+        }
+
+        mCartoonManager.generateCartoon(prompt, w, h, new CartoonManager.OnCartoonResultListener() {
+            @Override
+            public void onSuccess(Bitmap result) {
+                if (isFinishing() || isDestroyed()) return;
+                aiResultBitmap = result; // Lưu kết quả vào biến chung để nút Save hoạt động
+                showLoading(false, null);
+                showPreview(result); // Hiển thị lên màn hình
+            }
+
+            @Override
+            public void onError(String message) {
+                if (isFinishing() || isDestroyed()) return;
+                showLoading(false, null);
+                showToast("Lỗi: " + message);
+            }
+
+            @Override
+            public void onProgress(String status) {
+                runOnUiThread(() -> {
+                    if (txtProcessingStatus != null) {
+                        txtProcessingStatus.setText(status);
+                    }
+                });
+            }
+        });
     }
 
     private void showPreview(Bitmap result) {
