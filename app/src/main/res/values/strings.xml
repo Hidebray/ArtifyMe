@@ -91,7 +91,8 @@
     <string name="msg_ai_network_error">Lỗi kết nối mạng. Kiểm tra internet.</string>
 
     <string name="ai_editor_title">AI Chỉnh sửa</string>
-    <string name="ai_tool_background">Nền AI</string>
+    <string name="ai_tool_background">AI Background</string>
+    <string name="ai_tool_cartoon">AI Cartoonize</string>
 
     <string name="ai_bg_dialog_title">Tạo nền AI</string>
     <string name="ai_bg_dialog_message">Mô tả nền bạn muốn tạo</string>

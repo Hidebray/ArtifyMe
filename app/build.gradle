@@ -57,7 +57,7 @@ android {
 
 dependencies {
 
-    implementation 'com.google.mlkit:segmentation-selfie:16.0.0-beta6'
+    implementation libs.segmentation.selfie
     implementation "com.squareup.okhttp3:okhttp:4.12.0"
 
 
