@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
 
 public class AppExecutors {
     private static final Object LOCK = new Object();
-    private static AppExecutors sInstance;
+    private static volatile AppExecutors sInstance;
     private final Executor diskIO;
     private final Executor mainThread;
     private final Executor networkIO;
@@ -24,12 +24,16 @@ public class AppExecutors {
     public static AppExecutors getInstance() {
         if (sInstance == null) {
             synchronized (LOCK) {
-                sInstance = new AppExecutors(
-                        Executors.newSingleThreadExecutor(),
-                        Executors.newFixedThreadPool(3),
-                        new MainThreadExecutor(),
-                        Executors.newFixedThreadPool(4)
-                );
+                if (sInstance == null) {
+                    int threadCount = Runtime.getRuntime().availableProcessors();
+
+                    sInstance = new AppExecutors(
+                            Executors.newSingleThreadExecutor(),
+                            Executors.newFixedThreadPool(3),
+                            new MainThreadExecutor(),
+                            Executors.newFixedThreadPool(Math.max(2, threadCount))
+                    );
+                }
             }
         }
         return sInstance;

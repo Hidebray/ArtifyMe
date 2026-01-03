@@ -329,7 +329,7 @@ public class BasicEditorActivity extends BaseActivity implements
                 photoEdtView.setVisibility(View.VISIBLE);
                 int currentIndex = mFilterManager.getFilterIndex();
                 FilterFragment filterFragment = FilterFragment.newInstance(currentIndex);
-                AppExecutors.getInstance().diskIO().execute(() -> {
+                AppExecutors.getInstance().computation().execute(() -> {
                     Bitmap thumb = android.media.ThumbnailUtils.extractThumbnail(mainBitmap, 150, 150);
                     runOnUiThread(() -> {
                         if (!isFinishing()) filterFragment.setPreviewBitmap(thumb);
