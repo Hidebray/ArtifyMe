@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/bg_toolbar"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/tool_brush"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/btnDone"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@drawable/check_24px"
+        app:tint="@color/brand_primary"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tvTitle"
+        app:layout_constraintBottom_toBottomOf="@id/tvTitle" />
+
+    <TextView
+        android:id="@+id/lblSize"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_brush_size"
+        android:textSize="12sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"/>
+
+    <SeekBar
+        android:id="@+id/sbSize"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="20"
+        android:layout_marginStart="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/lblSize"
+        app:layout_constraintBottom_toBottomOf="@id/lblSize"
+        app:layout_constraintTop_toTopOf="@id/lblSize"/>
+
+    <TextView
+        android:id="@+id/lblOpacity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_brush_opacity"
+        android:textSize="12sp"
+        android:textColor="@color/text_secondary"
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/lblSize"/>
+
+    <SeekBar
+        android:id="@+id/sbOpacity"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="100"
+        android:layout_marginStart="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/lblOpacity"
+        app:layout_constraintBottom_toBottomOf="@id/lblOpacity"
+        app:layout_constraintTop_toTopOf="@id/lblOpacity"/>
+
+    <LinearLayout
+        android:id="@+id/btnEraser"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_marginTop="16dp"
+        android:padding="8dp"
+        android:background="@drawable/bg_pill_white_shadow"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/lblOpacity">
+
+        <ImageView
+            android:id="@+id/imgEraser"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/eraser_size_4_24px"
+            app:tint="@color/text_primary"/>
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_eraser_mode"
+        android:textSize="11sp"
+        android:layout_marginTop="4dp"
+        app:layout_constraintTop_toBottomOf="@id/btnEraser"
+        app:layout_constraintStart_toStartOf="@id/btnEraser"
+        app:layout_constraintEnd_toEndOf="@id/btnEraser"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rcvColors"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="@id/btnEraser"
+        app:layout_constraintTop_toTopOf="@id/btnEraser"
+        app:layout_constraintStart_toEndOf="@id/btnEraser"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

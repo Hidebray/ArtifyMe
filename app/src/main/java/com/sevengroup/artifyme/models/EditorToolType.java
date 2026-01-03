@@ -6,7 +6,8 @@ public enum EditorToolType {
     CROP(R.string.tool_crop, R.drawable.crop_24px),
     ADJUST(R.string.tool_adjust, R.drawable.adjust_24px),
     FILTER(R.string.tool_filter, R.drawable.filter_24px),
-    TEXT(R.string.tool_text, R.drawable.title_24px);
+    TEXT(R.string.tool_text, R.drawable.title_24px),
+    BRUSH(R.string.tool_brush, R.drawable.brush_24px);
 
     private final int nameResId;
     private final int iconResId;

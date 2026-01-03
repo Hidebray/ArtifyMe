@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -22,6 +21,7 @@ import com.sevengroup.artifyme.R;
 import com.sevengroup.artifyme.adapters.EditorToolsAdapter;
 import com.sevengroup.artifyme.adapters.FilterAdapter;
 import com.sevengroup.artifyme.fragments.editor.AdjustFragment;
+import com.sevengroup.artifyme.fragments.editor.BrushFragment;
 import com.sevengroup.artifyme.fragments.editor.FilterFragment;
 import com.sevengroup.artifyme.fragments.editor.TextFragment;
 import com.sevengroup.artifyme.managers.AdjustEditorManager;
@@ -48,14 +48,16 @@ public class BasicEditorActivity extends BaseActivity implements
         AdjustFragment.AdjustListener,
         TextFragment.TextFragmentListener,
         EditorToolsAdapter.OnToolClickListener,
-        FilterFragment.FilterListener {
+        FilterFragment.FilterListener,
+        BrushFragment.BrushListener {
 
     private ProgressBar prbEditor;
     private GPUImageView gpuImgView;
     private PhotoEditorView photoEdtView;
+    private ImageView imgCompare;
     private RecyclerView rcvTools;
     private FrameLayout frameSubTool;
-    private ImageButton btnClose, btnUndo, btnRedo;
+    private ImageButton btnCompare, btnClose, btnUndo, btnRedo;
     private TextView btnSave;
     private BasicEditorViewModel viewModel;
     private EditorToolsAdapter toolsAdapter;
@@ -115,11 +117,13 @@ public class BasicEditorActivity extends BaseActivity implements
     private void initViews() {
         btnClose = findViewById(R.id.btnClose);
         btnSave = findViewById(R.id.btnSave);
+        btnCompare = findViewById(R.id.btnCompare);
         btnUndo = findViewById(R.id.btnUndo);
         btnRedo = findViewById(R.id.btnRedo);
         prbEditor = findViewById(R.id.prbEditor);
         gpuImgView = findViewById(R.id.gpuImgView);
         photoEdtView = findViewById(R.id.photoEdtView);
+        imgCompare = findViewById(R.id.imgCompare);
         rcvTools = findViewById(R.id.rcvTools);
         frameSubTool = findViewById(R.id.frameSubTool);
 
@@ -145,7 +149,7 @@ public class BasicEditorActivity extends BaseActivity implements
                 updateUndoRedoUI();
             }
         });
-
+        setupCompareButton();
         updateUndoRedoUI();
     }
 
@@ -159,6 +163,34 @@ public class BasicEditorActivity extends BaseActivity implements
         getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
     }
 
+    private void setupCompareButton() {
+        btnCompare.setOnTouchListener((view, motionEvent) -> {
+            switch (motionEvent.getAction()) {
+                case android.view.MotionEvent.ACTION_DOWN:
+                    // Hiển thị ảnh gốc khi nhấn xuống
+                    if (mainBitmap != null) {
+                        imgCompare.setImageBitmap(mainBitmap);
+                        imgCompare.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                    }
+                    imgCompare.setVisibility(View.VISIBLE);
+                    return true; // Đánh dấu đã xử lý sự kiện
+
+                case android.view.MotionEvent.ACTION_UP:
+                    // Ẩn ảnh gốc khi thả tay
+                    imgCompare.setVisibility(View.GONE);
+
+                    // QUAN TRỌNG: Gọi performClick để thỏa mãn Lint và Accessibility
+                    view.performClick();
+                    return true;
+
+                case android.view.MotionEvent.ACTION_CANCEL:
+                    // Xử lý trường hợp trượt tay ra khỏi nút hoặc bị gián đoạn
+                    imgCompare.setVisibility(View.GONE);
+                    return true;
+            }
+            return false;
+        });
+    }
     private boolean loadIntentData() {
         if (getIntent() != null) {
             currentProjectId = getIntent().getLongExtra(AppConstants.KEY_PROJECT_ID, -1L);
@@ -232,6 +264,7 @@ public class BasicEditorActivity extends BaseActivity implements
         mStateBeforeDestructiveAction = captureCurrentState();
         mTextManager.clearAllViews();
         this.mainBitmap = croppedBitmap;
+        imgCompare.setImageBitmap(mainBitmap);
         photoEdtView.getSource().setImageBitmap(mainBitmap);
         mFilterManager.setImage(mainBitmap);
         mFilterManager.resetStateAfterDestructiveEdit();
@@ -308,6 +341,16 @@ public class BasicEditorActivity extends BaseActivity implements
                 setGpuMode(true);
                 photoEdtView.setVisibility(View.VISIBLE);
                 openFragment(TextFragment.newInstance());
+                break;
+            case BRUSH:
+                setGpuMode(true);
+                photoEdtView.setVisibility(View.VISIBLE);
+
+                mTextManager.getPhotoEditor().setBrushDrawingMode(true);
+
+                BrushFragment brushFragment = BrushFragment.newInstance();
+                brushFragment.setListener(this);
+                openFragment(brushFragment);
                 break;
         }
     }
@@ -407,6 +450,29 @@ public class BasicEditorActivity extends BaseActivity implements
     }
     @Override public void onFilterCancelled() {
         mFilterManager.restoreState();
+        closeFragment();
+    }
+
+    @Override
+    public void onBrushSizeChanged(float size) {
+        mTextManager.getPhotoEditor().setBrushSize(size);
+    }
+
+    @Override
+    public void onBrushColorChanged(int color) {
+        mTextManager.getPhotoEditor().setBrushDrawingMode(true);
+        mTextManager.getPhotoEditor().setBrushColor(color);
+    }
+
+    @Override
+    public void onBrushEraser() {
+        mTextManager.getPhotoEditor().brushEraser();
+    }
+
+    @Override
+    public void onBrushFinished() {
+        mTextManager.getPhotoEditor().setBrushDrawingMode(false);
+        saveSnapshotToHistory(); // Lưu lịch sử để Undo được nét vẽ
         closeFragment();
     }
 

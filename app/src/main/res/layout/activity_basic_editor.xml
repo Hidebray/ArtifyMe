@@ -44,6 +44,16 @@
             app:layout_constraintBottom_toBottomOf="parent">
 
             <ImageButton
+                android:id="@+id/btnCompare"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/compare_24px"
+                android:tooltipText="Nhấn giữ để xem ảnh gốc"
+                app:tint="@color/text_primary" />
+
+            <ImageButton
                 android:id="@+id/btnUndo"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
@@ -107,6 +117,14 @@
             android:id="@+id/photoEdtView"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+
+        <ImageView
+            android:id="@+id/imgCompare"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:scaleType="fitCenter"
+            android:background="@color/bg_app" />
     </FrameLayout>
 
     <ProgressBar
@@ -132,7 +150,7 @@
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardTools"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="24dp"
             app:cardBackgroundColor="@color/bg_toolbar"
