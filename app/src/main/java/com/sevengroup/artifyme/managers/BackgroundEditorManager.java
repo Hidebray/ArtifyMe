@@ -18,6 +18,8 @@ import com.google.mlkit.nl.translate.TranslatorOptions;
 import com.sevengroup.artifyme.utils.AppExecutors;
 import com.sevengroup.artifyme.BuildConfig;
 
+import org.json.JSONObject;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -38,8 +40,7 @@ public class BackgroundEditorManager {
 
     private final Context context;
     private final AppExecutors executors;
-    private static final String REMOVE_BG_API_KEY = BuildConfig.REMOVE_BG_API_KEY;
-
+    private static final String REMOVE_BG_API_KEY = com.sevengroup.artifyme.utils.Keys.getRemoveBgKey();
     private final Translator translator;
 
     // CẢI TIẾN 3: Thêm Local Manager để xử lý offline/tiết kiệm API
@@ -166,16 +167,61 @@ public class BackgroundEditorManager {
                     })
                     .addOnFailureListener(e -> latch.countDown());
 
-            boolean completed = latch.await(5, TimeUnit.SECONDS);
+            // Chờ tối đa 2 giây cho ML Kit
+            boolean completed = latch.await(2, TimeUnit.SECONDS);
             String mlResult = resultRef.get();
 
             if (completed && mlResult != null && !mlResult.trim().isEmpty()) {
-                return mlResult;
+                return mlResult; // Thành công với ML Kit
             }
-            return translateWithDictionary(trimmed);
         } catch (Exception e) {
-            return translateWithDictionary(trimmed);
+            e.printStackTrace();
         }
+
+        String apiResult = translateWithFreeApi(trimmed);
+        if (apiResult != null) {
+            return apiResult;
+        }
+
+        return translateWithDictionary(trimmed);
+    }
+
+    private String translateWithFreeApi(String text) {
+        try {
+            // Encode URL để xử lý ký tự đặc biệt, dấu cách
+            String encodedText = URLEncoder.encode(text, "UTF-8");
+
+            // API miễn phí MyMemory (Việt -> Anh)
+            String url = "https://api.mymemory.translated.net/get?q=" + encodedText + "&langpair=vi|en";
+
+            Request request = new Request.Builder()
+                    .url(url)
+                    .get()
+                    .build();
+
+            // Tạo Client mới hoặc dùng chung OkHttpClient nếu muốn
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(10, TimeUnit.SECONDS)
+                    .build();
+
+            try (Response response = client.newCall(request).execute()) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String jsonResponse = response.body().string();
+                    JSONObject jsonObject = new JSONObject(jsonResponse);
+
+                    // Cấu trúc JSON trả về: { "responseData": { "translatedText": "..." } }
+                    String translatedText = jsonObject.getJSONObject("responseData").getString("translatedText");
+
+                    if (translatedText != null && !translatedText.isEmpty()) {
+                        return translatedText;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null; // Trả về null để báo hiệu thất bại
     }
 
     private String translateWithDictionary(String prompt) {

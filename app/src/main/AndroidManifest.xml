@@ -11,8 +11,7 @@
         android:maxSdkVersion="32" />
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="29"
-        tools:ignore="ScopedStorage" />
+        android:maxSdkVersion="28" />
 
     <queries>
         <intent>
@@ -28,7 +27,10 @@
         android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.ArtifyMe">
+        android:theme="@style/Theme.ArtifyMe"
+        android:largeHeap="true"
+        android:hardwareAccelerated="true">
+
         <activity
             android:name=".activities.AiEditorActivity"
             android:exported="false" />

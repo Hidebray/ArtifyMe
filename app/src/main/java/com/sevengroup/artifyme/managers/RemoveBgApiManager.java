@@ -41,7 +41,7 @@ public class RemoveBgApiManager {
 
                 Request request = new Request.Builder()
                         .url(API_URL)
-                        .addHeader("X-Api-Key", BuildConfig.REMOVE_BG_API_KEY)
+                        .addHeader("X-Api-Key", com.sevengroup.artifyme.utils.Keys.getRemoveBgKey())
                         .post(requestBody)
                         .build();
 

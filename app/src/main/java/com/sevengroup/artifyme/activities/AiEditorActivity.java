@@ -20,6 +20,7 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.sevengroup.artifyme.R;
 import com.sevengroup.artifyme.adapters.AiToolsAdapter;
+import com.sevengroup.artifyme.fragments.bottomsheet.AiBackgroundSheet;
 import com.sevengroup.artifyme.managers.BackgroundEditorManager;
 import com.sevengroup.artifyme.managers.CartoonManager;
 import com.sevengroup.artifyme.models.AiToolType;
@@ -123,36 +124,26 @@ public class AiEditorActivity extends BaseActivity implements
     public void onAiToolSelected(AiToolType toolType) {
         switch (toolType) {
             case AI_BACKGROUND:
-                showAiBackgroundDialog();
+                showAiBackgroundSheet();
                 break;
             case AI_CARTOONIZE:
-                showAiCartoonDialog();
+                processAutoCartoon();
                 break;
             default:
                 break;
         }
     }
 
-    private void showAiBackgroundDialog() {
-        View dialogView = LayoutInflater.from(this)
-                .inflate(R.layout.dialog_ai_prompt, null);
-        EditText edtPrompt = dialogView.findViewById(R.id.edtPrompt);
-
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.ai_bg_dialog_title)
-                .setView(dialogView)
-                .setMessage(" Lưu ý: Nếu ảnh có quá nhiều hiệu ứng (swirl, sketch, v.v.), " +
-                        "AI có thể không xóa nền được. Hãy thử với ảnh gốc để có kết quả tốt nhất.")
-                .setPositiveButton("Tạo", (dialog, which) -> {
-                    String prompt = edtPrompt.getText().toString().trim();
-                    if (!TextUtils.isEmpty(prompt)) {
-                        processAiBackground(prompt);
-                    } else {
-                        showToast(getString(R.string.msg_enter_prompt));
-                    }
-                })
-                .setNegativeButton(R.string.btn_cancel, null)
-                .show();
+    private void showAiBackgroundSheet() {
+        AiBackgroundSheet bottomSheet = new AiBackgroundSheet();
+        bottomSheet.setListener(new AiBackgroundSheet.OnGenerateListener() {
+            @Override
+            public void onGenerate(String prompt) {
+                // Khi user bấm "Tạo nền mới" -> Gọi hàm xử lý cũ của bạn
+                processAiBackground(prompt);
+            }
+        });
+        bottomSheet.show(getSupportFragmentManager(), "AiBackgroundSheet");
     }
 
     private void processAiBackground(String prompt) {
@@ -196,50 +187,22 @@ public class AiEditorActivity extends BaseActivity implements
         );
     }
 
-    // --- CODE MỚI CHO CARTOON ---
-
-    private void showAiCartoonDialog() {
-        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_ai_prompt, null);
-        EditText edtPrompt = dialogView.findViewById(R.id.edtPrompt);
-
-        // Đổi hint để người dùng biết nên nhập gì
-        edtPrompt.setHint("VD: Chàng trai đeo kính, áo vest xanh...");
-
-        new AlertDialog.Builder(this)
-                .setTitle("Tạo nhân vật Hoạt hình")
-                .setView(dialogView)
-                .setMessage("Nhập mô tả chi tiết về nhân vật bạn muốn vẽ. AI sẽ tạo ra một bức tranh 3D Disney/Pixar cực đẹp dựa trên mô tả đó.")
-                .setPositiveButton("Vẽ ngay", (dialog, which) -> {
-                    String prompt = edtPrompt.getText().toString().trim();
-                    if (!TextUtils.isEmpty(prompt)) {
-                        processAiCartoon(prompt);
-                    } else {
-                        showToast(getString(R.string.msg_enter_prompt));
-                    }
-                })
-                .setNegativeButton(R.string.btn_cancel, null)
-                .show();
-    }
-
-    private void processAiCartoon(String prompt) {
-        // Show loading
-        showLoading(true, "Đang vẽ tranh hoạt hình...");
-
-        // Lấy kích thước ảnh gốc để tạo ảnh mới cùng tỉ lệ
-        int w = 1024; // Mặc định hoặc lấy imgOriginal.getWidth();
-        int h = 1024;
-        if (originalBitmap != null) {
-            w = originalBitmap.getWidth();
-            h = originalBitmap.getHeight();
+    private void processAutoCartoon() {
+        if (originalBitmap == null) {
+            showToast(getString(R.string.msg_ai_no_image));
+            return;
         }
 
-        mCartoonManager.generateCartoon(prompt, w, h, new CartoonManager.OnCartoonResultListener() {
+        // Show loading ngay lập tức
+        showLoading(true, "Đang phân tích ảnh...");
+
+        mCartoonManager.generateCartoonFromImage(originalBitmap, new CartoonManager.OnCartoonResultListener() {
             @Override
             public void onSuccess(Bitmap result) {
                 if (isFinishing() || isDestroyed()) return;
-                aiResultBitmap = result; // Lưu kết quả vào biến chung để nút Save hoạt động
+                aiResultBitmap = result;
                 showLoading(false, null);
-                showPreview(result); // Hiển thị lên màn hình
+                showPreview(result);
             }
 
             @Override

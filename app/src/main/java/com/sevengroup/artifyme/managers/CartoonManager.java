@@ -3,19 +3,20 @@ package com.sevengroup.artifyme.managers;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 
-import com.google.mlkit.common.model.DownloadConditions;
-import com.google.mlkit.nl.translate.TranslateLanguage;
-import com.google.mlkit.nl.translate.Translation;
-import com.google.mlkit.nl.translate.Translator;
-import com.google.mlkit.nl.translate.TranslatorOptions;
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.label.ImageLabel;
+import com.google.mlkit.vision.label.ImageLabeler;
+import com.google.mlkit.vision.label.ImageLabeling;
+import com.google.mlkit.vision.label.defaults.ImageLabelerOptions;
 import com.sevengroup.artifyme.utils.AppExecutors;
 
 import java.io.IOException;
 import java.net.URLEncoder;
-import java.util.concurrent.CountDownLatch;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -23,9 +24,9 @@ import okhttp3.Response;
 
 public class CartoonManager {
 
-    private final Context context;
     private final AppExecutors executors;
-    private final Translator translator;
+    // Thêm: Bộ nhận diện ảnh ML Kit
+    private final ImageLabeler imageLabeler;
 
     public interface OnCartoonResultListener {
         void onSuccess(Bitmap result);
@@ -34,89 +35,89 @@ public class CartoonManager {
     }
 
     public CartoonManager(Context context) {
-        this.context = context;
         this.executors = AppExecutors.getInstance();
 
-        // Cấu hình dịch thuật (Việt -> Anh)
-        TranslatorOptions options = new TranslatorOptions.Builder()
-                .setSourceLanguage(TranslateLanguage.VIETNAMESE)
-                .setTargetLanguage(TranslateLanguage.ENGLISH)
+        // Cấu hình ML Kit: Độ tin cậy > 50% mới lấy
+        ImageLabelerOptions options = new ImageLabelerOptions.Builder()
+                .setConfidenceThreshold(0.5f)
                 .build();
-        translator = Translation.getClient(options);
-
-        // Tải model dịch nếu chưa có
-        DownloadConditions conditions = new DownloadConditions.Builder().requireWifi().build();
-        translator.downloadModelIfNeeded(conditions);
+        imageLabeler = ImageLabeling.getClient(options);
     }
 
-    public void generateCartoon(String prompt, int width, int height, OnCartoonResultListener listener) {
-        executors.networkIO().execute(() -> {
-            try {
-                // 1. Dịch Prompt sang tiếng Anh
-                executors.mainThread().execute(() -> listener.onProgress("Đang phân tích mô tả..."));
-                String englishPrompt = translateToEnglish(prompt);
+    public void generateCartoonFromImage(Bitmap inputImage, OnCartoonResultListener listener) {
+        // 1. Phân tích ảnh để lấy từ khóa (Auto Prompt)
+        executors.mainThread().execute(() -> listener.onProgress("AI đang phân tích ảnh..."));
 
-                // 2. Gọi API tạo ảnh
-                executors.mainThread().execute(() -> listener.onProgress("Đang vẽ tranh hoạt hình (AI)..."));
+        InputImage image = InputImage.fromBitmap(inputImage, 0);
 
-                // Prompt Engineering: Thêm từ khóa để ra phong cách Disney/Pixar 3D
-                String stylePrompt = englishPrompt + ", 3d cartoon style, disney pixar style, cute, vibrant colors, high quality, masterpiece, 8k resolution, cinematic lighting";
+        imageLabeler.process(image)
+                .addOnSuccessListener(labels -> {
+                    // Lấy danh sách các vật thể nhận diện được
+                    List<String> keywords = new ArrayList<>();
+                    for (ImageLabel label : labels) {
+                        keywords.add(label.getText());
+                    }
 
-                Bitmap result = callPollinationsApi(stylePrompt, width, height);
+                    // Nếu không nhận diện được gì thì dùng từ khóa chung
+                    if (keywords.isEmpty()) {
+                        keywords.add("portrait");
+                        keywords.add("person");
+                    }
 
-                // 3. Trả về kết quả
-                executors.mainThread().execute(() -> listener.onSuccess(result));
+                    String detectedDescription = String.join(", ", keywords);
+                    Log.d("CartoonManager", "Auto Prompt: " + detectedDescription);
 
-            } catch (Exception e) {
-                e.printStackTrace();
-                executors.mainThread().execute(() -> listener.onError("Lỗi: " + e.getMessage()));
-            }
-        });
+                    // 2. Tạo Prompt hoàn chỉnh cho API
+                    // Prompt này được tối ưu cho phong cách 3D Disney
+                    String fullPrompt = "Cartoon character of " + detectedDescription
+                            + ", 3d cartoon style, disney pixar style, cute, vibrant colors, high quality, masterpiece, 8k resolution, cinematic lighting";
+
+                    // 3. Gọi API tạo ảnh (Chạy ở background)
+                    executors.networkIO().execute(() ->
+                            callPollinationsApi(fullPrompt, inputImage.getWidth(), inputImage.getHeight(), listener)
+                    );
+                })
+                .addOnFailureListener(e -> {
+                    // Nếu lỗi nhận diện, vẫn cố vẽ bằng prompt mặc định
+                    String fallbackPrompt = "Cartoon character, 3d cartoon style, disney pixar style, cute, masterpiece";
+                    executors.networkIO().execute(() ->
+                            callPollinationsApi(fallbackPrompt, inputImage.getWidth(), inputImage.getHeight(), listener)
+                    );
+                });
     }
 
-    private Bitmap callPollinationsApi(String prompt, int w, int h) throws Exception {
-        String encodedPrompt = URLEncoder.encode(prompt, "UTF-8");
-        // Random seed để mỗi lần vẽ lại khác nhau một chút
-        long seed = System.currentTimeMillis() % 10000;
-
-        // Sử dụng model 'flux' cho chất lượng tốt nhất hiện nay trên Pollinations
-        String url = String.format(
-                "https://image.pollinations.ai/prompt/%s?width=%d&height=%d&nologo=true&seed=%d&model=flux",
-                encodedPrompt, w, h, seed
-        );
-
-        Request request = new Request.Builder().url(url).get().build();
-
-        // Tăng timeout lên 60s vì tạo ảnh mất thời gian
-        OkHttpClient client = new OkHttpClient.Builder()
-                .connectTimeout(60, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .build();
-
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) throw new IOException("Server error: " + response.code());
-            if (response.body() == null) throw new IOException("Empty response");
-            return BitmapFactory.decodeStream(response.body().byteStream());
-        }
-    }
-
-    private String translateToEnglish(String prompt) {
+    // Hàm gọi API giữ nguyên logic cũ của bạn nhưng tách ra để tái sử dụng
+    private void callPollinationsApi(String prompt, int w, int h, OnCartoonResultListener listener) {
         try {
-            CountDownLatch latch = new CountDownLatch(1);
-            AtomicReference<String> resultRef = new AtomicReference<>(prompt);
+            executors.mainThread().execute(() -> listener.onProgress("Đang vẽ tranh (Auto)..."));
 
-            translator.translate(prompt)
-                    .addOnSuccessListener(s -> {
-                        resultRef.set(s);
-                        latch.countDown();
-                    })
-                    .addOnFailureListener(e -> latch.countDown());
+            String encodedPrompt = URLEncoder.encode(prompt, "UTF-8");
+            long seed = System.currentTimeMillis() % 10000;
 
-            // Chờ tối đa 3 giây cho việc dịch
-            latch.await(3, TimeUnit.SECONDS);
-            return resultRef.get();
+            String url = String.format(
+                    "https://image.pollinations.ai/prompt/%s?width=%d&height=%d&nologo=true&seed=%d&model=flux",
+                    encodedPrompt, w, h, seed
+            );
+
+            Request request = new Request.Builder().url(url).get().build();
+
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .connectTimeout(60, TimeUnit.SECONDS)
+                    .readTimeout(60, TimeUnit.SECONDS)
+                    .build();
+
+            try (Response response = client.newCall(request).execute()) {
+                if (!response.isSuccessful()) throw new IOException("Server error: " + response.code());
+                if (response.body() == null) throw new IOException("Empty response");
+
+                Bitmap result = BitmapFactory.decodeStream(response.body().byteStream());
+
+                // Trả về kết quả
+                executors.mainThread().execute(() -> listener.onSuccess(result));
+            }
         } catch (Exception e) {
-            return prompt; // Nếu lỗi dịch thì dùng luôn tiếng Việt (Fallback)
+            e.printStackTrace();
+            executors.mainThread().execute(() -> listener.onError("Lỗi: " + e.getMessage()));
         }
     }
 }
